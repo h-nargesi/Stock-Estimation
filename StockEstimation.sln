@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jiringi", "Jiringi\Jiringi.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chista-Core", "..\Chista\DotNet\Chista-Core\Chista-Core.csproj", "{0CD8E37E-EA00-426F-921D-A95843D45899}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chista-LX", "..\Chista\DotNet\Chista-LX\Chista-LX.csproj", "{5B65AAAD-5EC8-4AB4-BDC3-E669B1166EC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{0CD8E37E-EA00-426F-921D-A95843D45899}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CD8E37E-EA00-426F-921D-A95843D45899}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CD8E37E-EA00-426F-921D-A95843D45899}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B65AAAD-5EC8-4AB4-BDC3-E669B1166EC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B65AAAD-5EC8-4AB4-BDC3-E669B1166EC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B65AAAD-5EC8-4AB4-BDC3-E669B1166EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B65AAAD-5EC8-4AB4-BDC3-E669B1166EC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
