@@ -6,7 +6,7 @@ namespace Photon.Jiringi.DataCaching
 {
     class StockDataSizeChecker : IOverFlowCheck<StockTradeData>
     {
-        public StockDataSizeChecker(uint maximum_size)
+        public StockDataSizeChecker(int maximum_size)
         {
             if (maximum_size <= 1)
                 throw new ArgumentOutOfRangeException(nameof(maximum_size), "Must be greater than one.");
@@ -14,10 +14,10 @@ namespace Photon.Jiringi.DataCaching
             this.maximum_size = maximum_size;
         }
 
-        private readonly uint maximum_size;
+        private readonly int maximum_size;
 
         public bool Check(IReadOnlyCollection<StockTradeData> cache, 
-            StockTradeData last_value, StockTradeData index)
+            StockTradeData last_value, StockTradeData leader)
         {
             return cache.Count >= maximum_size;
         }

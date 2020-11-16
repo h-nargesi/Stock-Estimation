@@ -6,15 +6,17 @@ namespace Photon.Jiringi.DataCaching
 {
     class CacherGap<T> : Cacher<T> where T : struct, ICacheData
     {
-        public CacherGap(IOverFlowCheck<T> checker, bool is_necessary) : base(checker, is_necessary) { }
+        public CacherGap(IOverFlowCheck<T> checker) : base(checker) { }
 
         public override void FillBuffer(double[] buffer, ref int index) { }
 
-        public static CacherGap<T>[] CreateMulti(int count, IOverFlowCheck<T> checker, bool isnecessary)
+        public override int Count => 0;
+
+        public static CacherGap<T>[] CreateMulti(int count, IOverFlowCheck<T> checker)
         {
             var result = new CacherGap<T>[count];
             for (var i = 0; i < count; i++)
-                result[i] = new CacherGap<T>(checker, isnecessary);
+                result[i] = new CacherGap<T>(checker);
             return result;
         }
     }

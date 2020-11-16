@@ -6,23 +6,25 @@ namespace Photon.Jiringi.DataCaching
 {
     class CacheCollection<T> : ICache<T> where T : struct, ICacheData
     {
-        public CacheCollection(ICache<T>[] caches, bool is_necessary)
+        public CacheCollection(ICache<T>[] caches)
         {
-            this.caches = caches;
-            IsNecessary = is_necessary;
+            this.caches = caches ?? throw new ArgumentNullException(nameof(caches));
         }
 
         private readonly ICache<T>[] caches;
 
-        public bool IsNecessary { get; }
+        public int Count { get; private set; }
 
-        public T? InjectData(T index, T passed)
+        public T? InjectData(T leader, T input)
         {
-            T? cargo = passed;
+            Count = 0;
+            T? cargo = input;
             foreach (var cache in caches)
                 if (cargo.HasValue)
-                    cargo = cache.InjectData(index, cargo.Value);
-                else if (cache.IsNecessary) return index;
+                {
+                    cargo = cache.InjectData(leader, cargo.Value);
+                    Count += cache.Count;
+                }
                 else break;
 
             return cargo;
@@ -34,33 +36,34 @@ namespace Photon.Jiringi.DataCaching
         }
         public void Clear()
         {
+            Count = 0;
             foreach (var cache in caches)
                 cache.Clear();
         }
 
         public static CacheCollection<T> CreateMultiArray(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
+            int count, IOverFlowCheck<T> checker)
         {
             var result = new CacherArray<T>[count];
             for (var i = 0; i < count; i++)
-                result[i] = new CacherArray<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
+                result[i] = new CacherArray<T>(checker);
+            return new CacheCollection<T>(result);
         }
         public static CacheCollection<T> CreateMultiAvragtor(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
+            int count, IOverFlowCheck<T> checker)
         {
             var result = new CacherAvragtor<T>[count];
             for (var i = 0; i < count; i++)
-                result[i] = new CacherAvragtor<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
+                result[i] = new CacherAvragtor<T>(checker);
+            return new CacheCollection<T>(result);
         }
         public static CacheCollection<T> CreateMultiGap(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
+            int count, IOverFlowCheck<T> checker)
         {
             var result = new CacherGap<T>[count];
             for (var i = 0; i < count; i++)
-                result[i] = new CacherGap<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
+                result[i] = new CacherGap<T>(checker);
+            return new CacheCollection<T>(result);
         }
     }
 }

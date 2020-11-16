@@ -1,28 +1,35 @@
-﻿using System;
+﻿using Photon.Persian;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Photon.Jiringi.DataCaching
 {
-    class Cache<T> where T : struct, ICacheData
+    public class Cache
     {
-        public Cache(ICache<T>[] caches)
+        private Cache(ICache<StockTradeData>[] caches)
         {
             this.caches = caches;
         }
 
-        private readonly ICache<T>[] caches;
+        private readonly ICache<StockTradeData>[] caches;
 
-        public bool InjectData(T value)
+        public int Count { get; private set; }
+
+        public bool InjectData(DateTime date, double value)
         {
-            T? cargo = value;
+            Count = 0;
+            StockTradeData inserted_value = new StockTradeData(new Jalali(date).GetDate(), value);
+            StockTradeData? cargo = inserted_value;
             foreach (var cache in caches)
                 if (cargo.HasValue)
-                    cargo = cache.InjectData(value, cargo.Value);
-                else if (cache.IsNecessary) return false;
-                else break;
+                {
+                    cargo = cache.InjectData(inserted_value, cargo.Value);
+                    Count += cache.Count;
+                }
+                else return false;
 
-            return cargo;
+            return true;
         }
         public void FillBuffer(double[] buffer, ref int index)
         {
@@ -31,33 +38,24 @@ namespace Photon.Jiringi.DataCaching
         }
         public void Clear()
         {
+            Count = 0;
             foreach (var cache in caches)
                 cache.Clear();
         }
 
-        public static CacheCollection<T> CreateMultiArray(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
+        public static Cache Build(int basical, int year_count)
         {
-            var result = new CacherArray<T>[count];
-            for (var i = 0; i < count; i++)
-                result[i] = new CacherArray<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
-        }
-        public static CacheCollection<T> CreateMultiAvragtor(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
-        {
-            var result = new CacherAvragtor<T>[count];
-            for (var i = 0; i < count; i++)
-                result[i] = new CacherAvragtor<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
-        }
-        public static CacheCollection<T> CreateMultiGap(
-            int count, IOverFlowCheck<T> checker, bool is_necessary)
-        {
-            var result = new CacherGap<T>[count];
-            for (var i = 0; i < count; i++)
-                result[i] = new CacherGap<T>(checker, is_necessary);
-            return new CacheCollection<T>(result, is_necessary);
+            var builder = new CacheBuilder<StockTradeData>()
+                .AddCacherArray(new StockDataSizeChecker(basical))
+                .AddCacherGap(new StockDataYearChecker(1))
+                .AddCacherArray(new StockDataSizeChecker(60));
+
+            for (int i = 2; i <= year_count; i++)
+                builder
+                    .AddCacherGap(new StockDataYearChecker(i))
+                    .AddCacherAvragtorCollection(60 / i, new StockDataSizeChecker(i));
+
+            return new Cache(builder.CacheArray());
         }
     }
 }

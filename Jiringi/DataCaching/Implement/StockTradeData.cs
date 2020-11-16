@@ -5,7 +5,7 @@ using Photon.Persian;
 
 namespace Photon.Jiringi.DataCaching
 {
-    public struct StockTradeData : ICacheData
+    struct StockTradeData : ICacheData
     {
         public StockTradeData(IDateInfo date, double value)
         {

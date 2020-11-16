@@ -6,31 +6,27 @@ namespace Photon.Jiringi.DataCaching
 {
     abstract class Cacher<T> : ICache<T> where T : struct, ICacheData
     {
-        public Cacher(IOverFlowCheck<T> checker, bool isnecessary)
+        public Cacher(IOverFlowCheck<T> checker)
         {
             cache = new Queue<T>();
-            OverFlowChecker = checker ?? throw new ArgumentNullException(nameof(checker));
-            IsNecessary = isnecessary;
+            overflow_checker = checker ?? throw new ArgumentNullException(nameof(checker));
         }
 
+        protected readonly IOverFlowCheck<T> overflow_checker;
         protected readonly Queue<T> cache;
 
-        public IOverFlowCheck<T> OverFlowChecker { get; }
-        public bool IsNecessary { get; }
+        public abstract int Count { get; }
 
-        public virtual bool InjectData(T index, ref T cargo)
+        public virtual T? InjectData(T leader, T input)
         {
-            bool overflow;
-            if (OverFlowChecker.Check(cache, cache.Peek(), index))
-            {
-                cargo = cache.Dequeue();
-                overflow = true;
-            }
-            else overflow = false;
+            T? output;
+            if (overflow_checker.Check(cache, cache.Peek(), leader))
+                output = cache.Dequeue();
+            else output = null;
 
-            cache.Enqueue(cargo);
+            cache.Enqueue(input);
 
-            return overflow;
+            return output;
         }
         public abstract void FillBuffer(double[] buffer, ref int index);
         public virtual void Clear()

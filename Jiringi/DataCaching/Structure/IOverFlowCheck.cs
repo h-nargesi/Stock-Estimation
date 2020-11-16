@@ -6,6 +6,6 @@ namespace Photon.Jiringi.DataCaching
 {
     interface IOverFlowCheck<T> where T : struct, ICacheData
     {
-        bool Check(IReadOnlyCollection<T> cache, T last_value, T index);
+        bool Check(IReadOnlyCollection<T> cache, T last_value, T leader);
     }
 }

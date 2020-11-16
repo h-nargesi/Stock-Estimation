@@ -15,9 +15,9 @@ namespace Photon.Jiringi.DataCaching
         private readonly int year_diff;
 
         public bool Check(IReadOnlyCollection<StockTradeData> cache,
-            StockTradeData last_value, StockTradeData index)
+            StockTradeData last_value, StockTradeData leader)
         {
-            return year_diff >= index.Date.Year - last_value.Date.Year;
+            return year_diff >= leader.Date.Year - last_value.Date.Year;
         }
     }
 }
