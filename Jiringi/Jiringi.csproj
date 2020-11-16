@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>jiringi</AssemblyName>
+    <RootNamespace>Photon.Jiringi</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Chista\DotNet\Chista-Core\Chista-Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="photon.persian">
+      <HintPath>..\..\$ Libraries\Jalali Calendar\C#.net\Jalali Tools\bin\Release\netstandard2.0\photon.persian.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
