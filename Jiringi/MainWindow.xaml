@@ -3,10 +3,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Jiringi"
+        xmlns:local="clr-namespace:Photon.Jiringi"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
-    </Grid>
+        Title="Stock Trade Estimation" Height="450" Width="800"
+        Closing="Window_Closing">
+    <DockPanel>
+        <Menu VerticalAlignment="Top" DockPanel.Dock="Top">
+            <MenuItem Header="Networks">
+                <MenuItem Header="Create" Click="Networks_Create"></MenuItem>
+                <MenuItem Header="Load" Click="Networks_Load"></MenuItem>
+                <MenuItem Header="Save" Click="Networks_Save"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Data Provider"></MenuItem>
+            <MenuItem Header="Training">
+                <MenuItem Header="Start" Click="Training_Start"></MenuItem>
+                <MenuItem Header="Stop" Click="Training_Stop"></MenuItem>
+            </MenuItem>
+        </Menu>
+        <StatusBar VerticalAlignment="Bottom" DockPanel.Dock="Bottom" 
+                   Background="{Binding ElementName=Root, Path=AppState.Color}">
+            <Image Height="16" Width="16"/>
+            <Separator/>
+            <TextBlock Text="{Binding ElementName=Root, Path=AppState.Message}" TextWrapping="Wrap"/>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Text="{Binding ElementName=Root, Path=CurrentProcess}" TextWrapping="Wrap"/>
+            </StatusBarItem>
+        </StatusBar>
+        <TextBox BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" 
+                 Text="{Binding ElementName=Root, Path=Status.FullInfo}" />
+    </DockPanel>
 </Window>

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Photon.Jiringi.DataCaching
 {
-    public interface ICache<T> where T : struct, ICacheData
+    interface ICache<T> where T : struct, ICacheData
     {
         public int Count { get; }
         public T? InjectData(T leader, T input);

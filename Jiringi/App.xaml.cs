@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Photon.Jiringi.Config;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -12,5 +13,11 @@ namespace Photon.Jiringi
     /// </summary>
     public partial class App : Application
     {
+        public static RootConfigHandler Setting { get; }
+
+        static App()
+        {
+            Setting = new RootConfigHandler($"setting.json");
+        }
     }
 }
