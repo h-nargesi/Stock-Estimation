@@ -58,7 +58,7 @@ namespace Photon.Jiringi.Tools
             }
         }
 
-        static readonly SolidColorBrush
+        public static readonly SolidColorBrush
             BLANK = new SolidColorBrush(System.Windows.Media.Color.FromRgb(64, 64, 64)),
             INFO = new SolidColorBrush(System.Windows.Media.Color.FromRgb(47, 117, 181)),
             ERROR = new SolidColorBrush(System.Windows.Media.Color.FromRgb(150, 0, 50)),

@@ -6,6 +6,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>jiringi</AssemblyName>
     <RootNamespace>Photon.Jiringi</RootNamespace>
+    <Company>Photon</Company>
   </PropertyGroup>
 
   <ItemGroup>

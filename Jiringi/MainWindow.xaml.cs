@@ -28,7 +28,7 @@ namespace Photon.Jiringi
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
     {
         public MainWindow()
         {
@@ -40,10 +40,8 @@ namespace Photon.Jiringi
         private readonly DataProvider data_provider;
         private Instructor instructor;
         private TimeReporter time_reporter;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public AppState AppState { get; private set; }
-        public string CurrentProcess { get; private set; }
+        private const int report_time_interval = 30 * 10000;
+        private long last_time_reported = 0;
 
         private void Initialize_Instructor()
         {
@@ -55,39 +53,51 @@ namespace Photon.Jiringi
         {
             var offset_interval = time_reporter.GetNextAvg();
 
-            Networks_Report();
-
-            uint done_count;
-            long remain_count;
-            switch (instructor.Stage)
+            if (DateTime.Now.Ticks - last_time_reported > report_time_interval)
             {
-                case TraingingStages.Training:
-                    done_count = data_provider.TrainingCount;
-                    remain_count = data_provider.TrainingCount - instructor.Offset;
-                    remain_count += data_provider.ValidationCount;
-                    remain_count += data_provider.EvaluationCount;
-                    break;
-                case TraingingStages.Validation:
-                    done_count = data_provider.ValidationCount;
-                    remain_count = data_provider.ValidationCount - instructor.Offset;
-                    remain_count += data_provider.EvaluationCount;
-                    break;
-                case TraingingStages.Evaluation:
-                    done_count = data_provider.EvaluationCount;
-                    remain_count = data_provider.EvaluationCount - instructor.Offset;
-                    break;
-                default: throw new Exception("Invalid stage type");
+                uint done_count;
+                long remain_count;
+                switch (instructor.Stage)
+                {
+                    case TraingingStages.Training:
+                        done_count = data_provider.TrainingCount;
+                        remain_count = data_provider.TrainingCount - instructor.Offset;
+                        remain_count += data_provider.ValidationCount;
+                        remain_count += data_provider.EvaluationCount;
+                        break;
+                    case TraingingStages.Validation:
+                        done_count = data_provider.ValidationCount;
+                        remain_count = data_provider.ValidationCount - instructor.Offset;
+                        remain_count += data_provider.EvaluationCount;
+                        break;
+                    case TraingingStages.Evaluation:
+                        done_count = data_provider.EvaluationCount;
+                        remain_count = data_provider.EvaluationCount - instructor.Offset;
+                        break;
+                    default: throw new Exception("Invalid stage type");
+                }
+
+                // prepare report string
+                var progress = instructor.Offset * 100D / done_count;
+                string process_info =
+                    @$"#{instructor.Epoch} {instructor.Stage} {PrintUnsign(progress, 3):R}%";
+                string message = @$"Data loading={Instructor.GetDurationString(record.duration.Value)} Prediction={Instructor.GetDurationString(duration)} Left time={Instructor.GetDurationString(offset_interval * remain_count)}";
+
+                last_time_reported = DateTime.Now.Ticks;
+
+                Dispatcher.Invoke(() =>
+                {
+                    ProgressInfo.Text = process_info;
+                    ProgressBar.Value = progress;
+                });
+
+                ChangeStatus(INFO, message);
+                Networks_Report();
             }
-
-            // prepare report string
-            string message =
-@$"#{instructor.Epoch} progress={instructor.Stage.ToString().ToLower()},{PrintUnsign(instructor.Offset * 100D / done_count, 3):R}% data loading={Instructor.GetDurationString(record.duration.Value)} prediction={Instructor.GetDurationString(duration)} left-time={Instructor.GetDurationString(offset_interval * remain_count)}";
-
-            AppState.ChangeStatus(MessageState.Info, message);
         }
         private void Instructor_OnError(Instructor sender, Exception ex)
         {
-            AppState.ChangeStatusWithSave(MessageState.Error, ex.Message, ex.StackTrace);
+            ChangeStatusWithReport(ERROR, ex.Message, ex.StackTrace);
         }
 
         private static string Print(double val, int? digit)
@@ -106,9 +116,15 @@ namespace Photon.Jiringi
         private void Training_Start(object sender, RoutedEventArgs e)
         {
             if (instructor == null)
-                AppState.ChangeStatusWithSave(MessageState.Error, "The instructor is not inizialized.");
+                ChangeStatusWithSave(ERROR, "The instructor is not inizialized.");
             else
             {
+                Dispatcher.Invoke(() =>
+                {
+                    ProgressPanel.Visibility = Visibility.Visible;
+                    ProgressBar.Maximum = 100;
+                });
+
                 // reset stage
                 var stage = App.Setting.Process.Stage;
                 if (stage != null)
@@ -136,43 +152,30 @@ namespace Photon.Jiringi
         }
         private void Training_Stop(object sender, RoutedEventArgs e)
         {
-            instructor?.Stop();
-        }
-
-        private void Networks_Report()
-        {
-            // prepare report info
-            double accuracy = 0;
-            foreach (var prc in instructor.Processes)
-                accuracy = Math.Max(prc.CurrentAccuracy, accuracy);
-
-            string cur_proc = $"Training ({instructor.Processes.Count} net(s) | " +
-                $"best accuracy={PrintUnsign(accuracy * 100, 4):R})";
-
-            if (instructor.OutOfLine.Count > 0)
+            if (instructor != null)
             {
-                accuracy = 0;
-                foreach (var prc in instructor.OutOfLine)
-                    accuracy = Math.Max(prc.accuracy, accuracy);
-
-                cur_proc += $"Done ({instructor.OutOfLine.Count} net(s) | " +
-                    $"best accuracy={PrintUnsign(accuracy * 100, 4):R})";
+                instructor.Stop();
+                ChangeStatusWithSave(INFO, "The training process is stoped by user.");
             }
-
-            CurrentProcess = cur_proc;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentProcess)));
+            Dispatcher.Invoke(() =>
+            {
+                ProgressPanel.Visibility = Visibility.Collapsed;
+                ProgressInfo.Text = "";
+                ProgressBar.Value = 0;
+            });
         }
+
         private void Networks_Create(object sender, RoutedEventArgs e)
         {
             Training_Stop(sender, e);
 
-            AppState.ChangeStatusWithSave(MessageState.Info, "New brain ...");
+            ChangeStatusWithSave(INFO, "New brain ...");
 
             var layers = App.Setting.Brain.Layers.NodesCount;
             if (layers == null || layers.Length == 0)
             {
                 App.Setting.Brain.Layers.NodesCount = new int[0];
-                AppState.ChangeStatusWithSave(MessageState.Error, "The default layer's node count is not set.");
+                ChangeStatusWithSave(ERROR, "The default layer's node count is not set.");
                 return;
             }
 
@@ -186,7 +189,7 @@ namespace Photon.Jiringi
 
             for (int i = 0; i < images.Length; i++)
                 images[i] = new NeuralNetworkInitializer()
-                    .SetInputSize(DataProvider.SIGNAL_COUNT_TOTAL)
+                    .SetInputSize(DataProvider.SIGNAL_COUNT)
                     .AddLayer(conduction, layers)
                     .AddLayer(output, DataProvider.RESULT_COUNT)
                     .SetCorrection(new ErrorStack(DataProvider.RESULT_COUNT), new RegularizationL2())
@@ -204,6 +207,7 @@ namespace Photon.Jiringi
                 });
 
             Networks_Report();
+            ChangeStatusWithSave(DONE, "The neural networks created.");
         }
         private void Networks_Load(object sender, RoutedEventArgs e)
         {
@@ -213,7 +217,7 @@ namespace Photon.Jiringi
             };
             if (openning.ShowDialog() != true) return;
 
-            AppState.ChangeStatusWithSave(MessageState.Info, "Loading neural network process ...");
+            ChangeStatusWithSave(INFO, "Loading neural network process ...");
             var file = GeneralFileRestore.Restore(openning.FileName);
 
             switch (file)
@@ -230,27 +234,92 @@ namespace Photon.Jiringi
                         nameof(file), "this type of file is not supported.");
             }
 
+            ChangeStatusWithSave(DONE, "The data loaded.");
         }
         private void Networks_Save(object sender, RoutedEventArgs e)
         {
             if (instructor == null)
             {
-                AppState.ChangeStatusWithSave(MessageState.Error, "Loading neural network process ...");
+                ChangeStatusWithSave(ERROR, "The neural network process is not loaded.");
                 return;
             }
+            else ChangeStatusWithSave(INFO, "Saving neural network process ...");
 
             var saving = new SaveFileDialog();
             if (saving.ShowDialog() != true) return;
 
-            AppState.ChangeStatusWithSave(MessageState.Info, "Saving neural network process ...");
             TrainProcessSerializer.Serialize(saving.FileName, instructor);
+            App.Setting.Save();
+
+            ChangeStatusWithSave(DONE, "The data saved.");
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             if (instructor != null)
                 TrainProcessSerializer.Serialize("temp.nnp", instructor);
-            File.AppendAllText("logs", AppState.FullInfo);
+            File.AppendAllText("logs", logs.ToString());
+            App.Setting.Save();
         }
+
+        private readonly StringBuilder logs = new StringBuilder();
+        private void Networks_Report()
+        {
+            // prepare report info
+            double accuracy = 0;
+            foreach (var prc in instructor.Processes)
+                accuracy = Math.Max(prc.CurrentAccuracy, accuracy);
+
+            string cur_proc = $"Training [{instructor.Processes.Count} net(s), " +
+                $"best:{PrintUnsign(accuracy * 100, 4):R}]";
+
+            if (instructor.OutOfLine.Count > 0)
+            {
+                accuracy = 0;
+                foreach (var prc in instructor.OutOfLine)
+                    accuracy = Math.Max(prc.accuracy, accuracy);
+
+                cur_proc += $"Done [{instructor.OutOfLine.Count} net(s), " +
+                    $"best:{PrintUnsign(accuracy * 100, 4):R}]";
+            }
+
+            Dispatcher.Invoke(() => StatusCurrentNets.Text = cur_proc);
+        }
+        private void ChangeStatus(Brush state, string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                StatusPanel.Background = state;
+                StatusMessage.Text = message;
+            });
+        }
+        private void ChangeStatusWithSave(Brush state, string message)
+        {
+            logs.Append(message).Append("\r\n");
+
+            Dispatcher.Invoke(() =>
+            {
+                StatusPanel.Background = state;
+                StatusMessage.Text = message;
+                Logs.Text = logs.ToString();
+            });
+        }
+        private void ChangeStatusWithReport(Brush state, string message, string report)
+        {
+            logs.Append(report).Append("\r\n");
+
+            Dispatcher.Invoke(() =>
+            {
+                StatusPanel.Background = state;
+                StatusMessage.Text = message;
+                Logs.Text = logs.ToString();
+            });
+        }
+
+        public static readonly SolidColorBrush
+            BLANK = new SolidColorBrush(Color.FromRgb(64, 64, 64)),
+            INFO = new SolidColorBrush(Color.FromRgb(47, 117, 181)),
+            ERROR = new SolidColorBrush(Color.FromRgb(150, 0, 50)),
+            DONE = new SolidColorBrush(Color.FromRgb(0, 176, 80));
     }
 }
