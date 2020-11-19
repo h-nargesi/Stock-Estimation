@@ -8,6 +8,6 @@ namespace Photon.Jiringi.DataCaching
     interface ICacheData
     {
         public double Value { get; }
-        public IDateInfo Date { get; }
+        public uint Offset { get; }
     }
 }

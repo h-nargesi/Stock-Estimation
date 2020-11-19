@@ -5,15 +5,27 @@ using Photon.Persian;
 
 namespace Photon.Jiringi.DataCaching
 {
-    struct StockTradeData : ICacheData
+    public struct StockTradeData : ICacheData
     {
-        public StockTradeData(IDateInfo date, double value)
+        public StockTradeData(uint offset, IDateInfo date, decimal price, double change, char? type)
         {
             Date = date ?? throw new ArgumentNullException(nameof(date));
-            Value = value;
+            Offset = offset;
+            Price = price;
+            Change = change;
+            RecordType = type;
         }
 
-        public double Value { get; }
+        public uint Offset { get; }
         public IDateInfo Date { get; }
+        public decimal Price { get; }
+        public double Change { get; }
+        public double Value => Change;
+        public char? RecordType { get; }
+
+        public override string ToString()
+        {
+            return $"#{Offset}[{Date},{Change}]";
+        }
     }
 }

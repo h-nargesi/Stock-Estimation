@@ -11,15 +11,15 @@ namespace Photon.Jiringi.DataCaching
             if (maximum_size <= 1)
                 throw new ArgumentOutOfRangeException(nameof(maximum_size), "Must be greater than one.");
 
-            this.maximum_size = maximum_size;
+            MaxLength = maximum_size;
         }
 
-        private readonly int maximum_size;
+        public int MaxLength { get; }
 
-        public bool Check(IReadOnlyCollection<StockTradeData> cache, 
+        public bool OverFlow(IReadOnlyCollection<StockTradeData> cache,
             StockTradeData last_value, StockTradeData leader)
         {
-            return cache.Count >= maximum_size;
+            return cache.Count >= MaxLength;
         }
     }
 }

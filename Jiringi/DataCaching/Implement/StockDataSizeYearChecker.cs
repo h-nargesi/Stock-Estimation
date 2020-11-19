@@ -5,19 +5,22 @@ using Photon.Persian;
 
 namespace Photon.Jiringi.DataCaching
 {
-    class StockDataYearChecker : IOverFlowCheck<StockTradeData>
+    class StockDataSizeYearChecker : IOverFlowCheck<StockTradeData>
     {
-        public StockDataYearChecker(int year_diff)
+        public StockDataSizeYearChecker(int maximum_size, int year_diff)
         {
+            this.MaxLength = maximum_size;
             this.year_diff = year_diff;
         }
 
         public readonly int year_diff;
-        public int MaxLength => -1;
+        public int MaxLength { get; }
 
         public bool OverFlow(IReadOnlyCollection<StockTradeData> cache,
             StockTradeData last_value, StockTradeData leader)
         {
+            if (cache.Count >= MaxLength) return true;
+
             var criterion_yesr = leader.Date.Year - year_diff;
             if (last_value.Date.Year < criterion_yesr) return true;
             else if (last_value.Date.Year > criterion_yesr) return false;

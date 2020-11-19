@@ -6,14 +6,21 @@ namespace Photon.Jiringi.DataCaching
 {
     class CacherArray<T> : Cacher<T> where T : struct, ICacheData
     {
-        public CacherArray(IOverFlowCheck<T> checker) : base(checker) { }
+        public CacherArray(IOverFlowCheck<T> checker) : base(checker)
+        {
+            if (overflow_checker.MaxLength < 0) OutputCount = 0;
+            else OutputCount = (uint)overflow_checker.MaxLength;
+        }
 
-        public override int Count => cache.Count;
+        public override uint OutputCount { get; }
 
         public override void FillBuffer(double[] buffer, ref int index)
         {
+            var start_index = index;
             foreach (var val in cache)
                 buffer[index++] = val.Value;
+            if (overflow_checker.MaxLength > 0)
+                index = start_index + overflow_checker.MaxLength;
         }
 
         public static CacherArray<T>[] CreateMulti(int count, IOverFlowCheck<T> checker)

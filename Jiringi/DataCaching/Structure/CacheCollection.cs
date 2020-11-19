@@ -9,36 +9,63 @@ namespace Photon.Jiringi.DataCaching
         public CacheCollection(ICache<T>[] caches)
         {
             this.caches = caches ?? throw new ArgumentNullException(nameof(caches));
+            for (var c = 0; c < caches.Length; c++)
+                if (caches[c] == null)
+                    throw new ArgumentNullException(nameof(caches), "caches index " + c);
+                else OutputCount += caches[c].OutputCount;
         }
 
         private readonly ICache<T>[] caches;
 
-        public int Count { get; private set; }
+        public bool IsFull => caches[^1].IsFull;
+        public uint OutputCount { get; }
+        public uint RealDataCount { get; private set; }
+        public T? FirstValue => caches[0].FirstValue;
+        public T? LastValue { get; private set; }
 
-        public T? InjectData(T leader, T input)
+        public void InjectDataToFirst(T leader, LinkedList<T> cargo)
         {
-            Count = 0;
-            T? cargo = input;
+            RealDataCount = 0;
+
             foreach (var cache in caches)
-                if (cargo.HasValue)
+                if (cargo.Count > 0)
                 {
-                    cargo = cache.InjectData(leader, cargo.Value);
-                    Count += cache.Count;
+                    cache.InjectDataToFirst(leader, cargo);
+                    RealDataCount += cache.RealDataCount;
+                    LastValue = cache.LastValue;
                 }
                 else break;
-
-            return cargo;
         }
+        public void InjectDataToLast(T leader, LinkedList<T> cargo)
+        {
+            RealDataCount = 0;
+
+            foreach (var cache in caches)
+                if (cargo.Count > 0)
+                {
+                    cache.InjectDataToLast(leader, cargo);
+                    RealDataCount += cache.RealDataCount;
+                    LastValue = cache.LastValue;
+                }
+                else break;
+        }
+        public void Clear()
+        {
+            RealDataCount = 0;
+            LastValue = null;
+            foreach (var cache in caches)
+                cache.Clear();
+        }
+
         public void FillBuffer(double[] buffer, ref int index)
         {
             foreach (var cache in caches)
                 cache.FillBuffer(buffer, ref index);
         }
-        public void Clear()
+        public void CheckOffsetSequence(ref uint previous_offset)
         {
-            Count = 0;
             foreach (var cache in caches)
-                cache.Clear();
+                cache.CheckOffsetSequence(ref previous_offset);
         }
 
         public static CacheCollection<T> CreateMultiArray(

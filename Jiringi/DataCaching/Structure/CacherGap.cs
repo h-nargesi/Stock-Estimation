@@ -10,7 +10,7 @@ namespace Photon.Jiringi.DataCaching
 
         public override void FillBuffer(double[] buffer, ref int index) { }
 
-        public override int Count => 0;
+        public override uint OutputCount => 0;
 
         public static CacherGap<T>[] CreateMulti(int count, IOverFlowCheck<T> checker)
         {

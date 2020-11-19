@@ -10,21 +10,33 @@ namespace Photon.Jiringi.DataCaching
 
         private double current_sum;
 
-        public override int Count => cache.Count > 0 ? 1 : 0;
+        public override uint OutputCount => 1;
 
-        public override T? InjectData(T leader, T input)
+        public override void InjectDataToFirst(T leader, LinkedList<T> cargo)
         {
-            var out_put_value = base.InjectData(leader, input);
+            foreach (var input in cargo)
+                current_sum += input.Value;
 
-            if (out_put_value.HasValue)
-                current_sum -= out_put_value.Value.Value;
-            current_sum += input.Value;
+            base.InjectDataToFirst(leader, cargo);
 
-            return out_put_value;
+            foreach (var output in cargo)
+                current_sum -= output.Value;
+        }
+        public override void InjectDataToLast(T leader, LinkedList<T> cargo)
+        {
+            foreach (var input in cargo)
+                current_sum += input.Value;
+
+            base.InjectDataToLast(leader, cargo);
+
+            foreach (var output in cargo)
+                current_sum -= output.Value;
         }
         public override void FillBuffer(double[] buffer, ref int index)
         {
-            buffer[index++] = current_sum / cache.Count;
+            if (cache.Count > 0)
+                buffer[index] = current_sum / cache.Count;
+            index++;
         }
         public override void Clear()
         {

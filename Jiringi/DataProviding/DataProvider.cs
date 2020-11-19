@@ -16,6 +16,7 @@ namespace Photon.Jiringi.DataProviding
         public DataProvider(RootConfigHandler setting)
         {
             this.setting = setting ?? throw new ArgumentNullException(nameof(setting));
+            caches = new Dictionary<int, Cache>();
         }
 
         private readonly RootConfigHandler setting;
@@ -24,7 +25,7 @@ namespace Photon.Jiringi.DataProviding
             cumulative_frequency_validation, cumulative_frequency_evaluation;
         private SqlCommand sqlite;
         private readonly object sqlite_lock = new object();
-        private Cache cache;
+        private readonly Dictionary<int, Cache> caches;
 
         public uint TrainingCount { get; private set; }
         public uint ValidationCount { get; private set; }
@@ -34,6 +35,7 @@ namespace Photon.Jiringi.DataProviding
         {
             lock (sqlite_lock)
             {
+                caches.Clear();
                 sqlite = new SqlCommand
                 {
                     Connection = new SqlConnection(setting.DataProvider)
@@ -52,34 +54,49 @@ namespace Photon.Jiringi.DataProviding
 
                 while (reader.Read())
                 {
-                    if ((uint)(int)reader[1] > 0)
+                    uint count;
+                    bool is_inserted = false;
+                    int instrument_id = (int)reader[0];
+
+                    count = (uint)(int)reader[1];
+                    if (count > 0)
                     {
-                        cumulative_frequency_training.Add(new Step(TrainingCount, (int)reader[0], true));
-                        TrainingCount += (uint)(int)reader[1];
+                        cumulative_frequency_training.Add(
+                            new Step(instrument_id, TrainingCount, count, true));
+                        TrainingCount += count;
+                        is_inserted = true;
                     }
 
-                    if ((uint)(int)reader[2] > 0)
+                    count = (uint)(int)reader[2];
+                    if (count > 0)
                     {
-                        cumulative_frequency_validation.Add(new Step(ValidationCount, (int)reader[0], false));
-                        ValidationCount += (uint)(int)reader[2];
+                        cumulative_frequency_validation.Add(
+                            new Step(instrument_id, ValidationCount, count, false));
+                        ValidationCount += count;
+                        is_inserted = true;
                     }
 
-                    if ((uint)(int)reader[3] > 0)
+                    count = (uint)(int)reader[3];
+                    if (count > 0)
                     {
                         cumulative_frequency_evaluation.Add(
-                            new Step(EvaluationCount, (int)reader[0], false));
-                        EvaluationCount += (uint)(int)reader[3];
+                            new Step(instrument_id, EvaluationCount, count, false));
+                        EvaluationCount += count;
+                        is_inserted = true;
                     }
+
+                    if (!is_inserted) continue;
+
+                    if (!caches.ContainsKey(instrument_id))
+                        caches.Add(instrument_id, Cache.Build(
+                            RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
                 }
 
                 if (cumulative_frequency_training.Count == 0)
                     throw new Exception("The data set is empty.");
 
-                sqlite.CommandText = "GetTrade";
-                sqlite.CommandType = CommandType.StoredProcedure;
+                sqlite.CommandText = sql_trade;
             }
-
-            cache = Cache.Build(SIGNAL_STEP_COUNT, YEARS_COUNT);
         }
         public Task<Record> PrepareNextData(uint offset, TraingingStages stage)
         {
@@ -87,10 +104,9 @@ namespace Photon.Jiringi.DataProviding
             {
                 var start_time = DateTime.Now.Ticks;
                 var result = new double[RESULT_COUNT];
-                var signal = new double[SIGNAL_COUNT_TOTAL];
+                var signal = new double[SIGNAL_COUNT];
 
-                int r = 0, s = 0, company_id;
-                (offset, company_id) = stage switch
+                var (instrument_id, record_offset) = stage switch
                 {
                     TraingingStages.Training => FindCompany(cumulative_frequency_training, offset),
                     TraingingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
@@ -98,38 +114,61 @@ namespace Photon.Jiringi.DataProviding
                     _ => throw new Exception("Invalid stage type"),
                 };
 
+                var cache = caches[instrument_id];
+
                 lock (sqlite_lock)
                     if (sqlite != null)
                     {
-                        sqlite.Parameters.Clear();
-                        sqlite.Parameters.Add("@ID", SqlDbType.Int).Value = company_id;
-                        sqlite.Parameters.Add("@Type", SqlDbType.Char, 1).Value = stage.ToString()[0];
-                        sqlite.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
-                        using var reader = sqlite.ExecuteReader();
-                        while (reader.Read())
+                        if (cache.RealDataCount > 0 &&
+                            record_offset <= cache.FirstValue.Value.Offset &&
+                            record_offset + ESTIMATED_TOTAL_RECORD_COUNT >= cache.FirstValue.Value.Offset)
                         {
-                            if (r < RESULT_COUNT) result[r++] = (double)(decimal)reader[0];
-                            else if (s < SIGNAL_COUNT_TOTAL) signal[s++] = (double)(decimal)reader[0];
-                            else break;
+                            var records_count = (int)(cache.FirstValue.Value.Offset - record_offset);
+                            if (!cache.IsFull) records_count++;
+
+                            FillBackward(instrument_id, record_offset, records_count);
                         }
+                        else
+                        {
+                            cache.Clear();
+                            FillForward(instrument_id, record_offset, ESTIMATED_TOTAL_RECORD_COUNT);
+                        }
+
+                        while (cache.FirstValue.Value.RecordType == null)
+                            FillBackward(instrument_id, --record_offset, 1);
+
+                        while (!cache.IsFull)
+                            FillForward(instrument_id,
+                                record_offset + cache.RealDataCount, ESTIMATED_TOTAL_RECORD_COUNT);
                     }
 
-                if (s <= SIGNAL_COUNT_TOTAL - INSTRUNMENT_ID)
-                    Convertor.BinaryState(company_id, signal, ref s);
+#if DEBUG
+                cache.CheckOffsetSequence(record_offset);
+#endif
 
-                if (r < RESULT_COUNT || s < SIGNAL_COUNT_TOTAL)
-                    throw new Exception($"Invalid data size ({offset}).");
+                int r = 0, s = 0;
+                var buffer = new double[CACHE_OUTPUT_COUNT];
+                cache.FillBuffer(buffer, ref s);
 
-                return new Record(signal, result, company_id, DateTime.Now.Ticks - start_time);
+                while (r < RESULT_COUNT)
+                    result[r] = buffer[r++];
+
+                s = 0;
+                while (r < CACHE_OUTPUT_COUNT)
+                    signal[s++] = buffer[r++];
+
+                Convertor.BinaryState(instrument_id, signal, ref s);
+
+                return new Record(signal, result, instrument_id, DateTime.Now.Ticks - start_time);
             });
         }
-        private (uint offset, int instrument_id) FindCompany(List<Step> cumulative_frequency, uint offset)
+        private (int id, uint rec_offset) FindCompany(List<Step> cumulative_frequency, uint offset)
         {
             if (offset <= 0)
             {
                 company_step = 0;
                 var inst = cumulative_frequency[company_step];
-                return (inst.start_point, inst.instrument);
+                return inst.GetRecordOffset(0);
             }
 
             int start = 0, top = cumulative_frequency.Count;
@@ -139,18 +178,66 @@ namespace Photon.Jiringi.DataProviding
                 left = cumulative_frequency[company_step];
                 if (company_step + 1 < cumulative_frequency.Count)
                     right = cumulative_frequency[company_step + 1];
-                else return (offset - left.start_point, left.instrument);
+                else return left.GetRecordOffset(offset);
 
                 if (left.start_point <= offset && offset < right.start_point)
-                    return (offset - left.start_point, left.instrument);
+                    return left.GetRecordOffset(offset);
                 else if (offset == right.start_point)
                 {
                     company_step++;
-                    return (offset - right.start_point, right.instrument);
+                    return right.GetRecordOffset(offset);
                 }
                 else if (offset > right.start_point) start = company_step + 1;
                 else if (left.start_point > offset) top = company_step;
                 company_step = (top + start) / 2;
+            }
+        }
+        private void FillForward(int instrument_id, uint record_offset, int record_count)
+        {
+            var cache = caches[instrument_id];
+
+            sqlite.Parameters.Clear();
+            sqlite.Parameters.Add("@InstrumentID", SqlDbType.Int).Value = instrument_id;
+            sqlite.Parameters.Add("@Offset", SqlDbType.Int).Value = record_offset;
+            sqlite.Parameters.Add("@Count", SqlDbType.Int).Value = record_count;
+            using var reader = sqlite.ExecuteReader();
+
+            int i = 0;
+            while (reader.Read())
+            {
+                i++;
+                char? type = reader[3] is DBNull ? null : (char?)((string)reader[3])[0];
+                if (cache.InjectDataToLast(
+                    (uint)(long)reader[0], (DateTime)reader[1], (decimal)reader[2], type))
+                    break;
+            }
+
+            if (i == 0) throw new Exception("There is not more data.");
+        }
+        private void FillBackward(int instrument_id, uint record_offset, int record_count)
+        {
+            var cache = caches[instrument_id];
+            var stack = new Stack<(uint offset, DateTime date, decimal price, char? type)>();
+
+            sqlite.Parameters.Clear();
+            sqlite.Parameters.Add("@InstrumentID", SqlDbType.Int).Value = instrument_id;
+            sqlite.Parameters.Add("@Offset", SqlDbType.Int).Value = record_offset;
+            sqlite.Parameters.Add("@Count", SqlDbType.Int).Value = record_count;
+            using var reader = sqlite.ExecuteReader();
+
+            while (reader.Read())
+            {
+                char? type = reader[3] is DBNull ? null : (char?)((string)reader[3])[0];
+                stack.Push(((uint)(long)reader[0], (DateTime)reader[1], (decimal)reader[2], type));
+            }
+
+            if (stack.Count < 1) throw new Exception("There is not more data.");
+
+            while (stack.Count > 0)
+            {
+                var (offset, date, price, type) = stack.Pop();
+                cache.InjectDataToFirst(offset, date, price, type);
+                // DO NOT BREAK. we should go to criterion offset
             }
         }
 
@@ -159,6 +246,7 @@ namespace Photon.Jiringi.DataProviding
             if (sqlite != null)
                 lock (sqlite_lock)
                 {
+                    caches.Clear();
                     var connection = sqlite.Connection;
                     sqlite.Dispose();
                     connection?.Dispose();
@@ -170,44 +258,48 @@ namespace Photon.Jiringi.DataProviding
         #region SQL Queries
         public const int YEARS_COUNT = 3;
         public const int RESULT_COUNT = 20;
-        public const int SIGNAL_STEP_COUNT = 183;
-        public const int SIGNAL_STEP_LAST_YEARS = 60;
+        public const int RECORDS_THIS_YEAR_IN_SIGNAL = 183;
+        public const int RECORDS_PREVIOUS_ONE_YEAR = 60;
         public const int INSTRUNMENT_ID = 32;
-        public static readonly int SIGNAL_COUNT_BASICAL;
-        public static readonly int SIGNAL_COUNT_LAST_YEARS;
-        public static readonly int SIGNAL_COUNT_TOTAL;
+        public const int ESTIMATED_TOTAL_RECORD_COUNT = 240 * (YEARS_COUNT + 1);
+        public static readonly int RECORDS_PREVIOUS_YEARS_TOTAL;
+        public static readonly int SIGNAL_COUNT;
+        public static readonly int CACHE_OUTPUT_COUNT;
 
         static DataProvider()
         {
-            SIGNAL_COUNT_BASICAL = SIGNAL_STEP_COUNT;/* +
-                (int)Math.Ceiling(SIGNAL_STEP_COUNT / 2.0) +
-                (int)Math.Ceiling(SIGNAL_STEP_COUNT / 3.0) +
-                (int)Math.Ceiling(SIGNAL_STEP_COUNT / 4.0);*/
-
-            SIGNAL_COUNT_LAST_YEARS = 0;
+            RECORDS_PREVIOUS_YEARS_TOTAL = 0;
             for (int y = 1; y <= YEARS_COUNT;)
-                SIGNAL_COUNT_LAST_YEARS += (int)Math.Ceiling(SIGNAL_STEP_LAST_YEARS / (double)(y++));
-            SIGNAL_COUNT_TOTAL = SIGNAL_COUNT_BASICAL + SIGNAL_COUNT_LAST_YEARS + INSTRUNMENT_ID;
+                RECORDS_PREVIOUS_YEARS_TOTAL += (int)Math.Ceiling(RECORDS_PREVIOUS_ONE_YEAR / (double)(y++));
+
+            SIGNAL_COUNT = RECORDS_THIS_YEAR_IN_SIGNAL + RECORDS_PREVIOUS_YEARS_TOTAL + INSTRUNMENT_ID;
+            CACHE_OUTPUT_COUNT = RESULT_COUNT + RECORDS_THIS_YEAR_IN_SIGNAL + RECORDS_PREVIOUS_YEARS_TOTAL;
         }
 
         private readonly static string sql_counting = $@"
-SELECT		InstrumentID,
+select		InstrumentID,
 			iif(TrainingCount > 0, TrainingCount, 0) as TrainingCount,
 			iif(ValidationCount > 0, ValidationCount, 0) as ValidationCount,
 			iif(EvaluationCount > 0, EvaluationCount, 0) as EvaluationCount
 from (
 	select		InstrumentID,
-				sum(iif(RecordType = 'T', 1, 0)) - {RESULT_COUNT} as TrainingCount,
-				sum(iif(RecordType = 'V', 1, 0)) - {RESULT_COUNT} as ValidationCount,
-				sum(iif(RecordType = 'E', 1, 0)) - {RESULT_COUNT} as EvaluationCount
+				sum(iif(RecordType = 'T', 1, 0)) as TrainingCount,
+				sum(iif(RecordType = 'V', 1, 0)) as ValidationCount,
+				sum(iif(RecordType = 'E', 1, 0)) as EvaluationCount
 	from		Trade
 	where		RecordType is not null
 	group by	InstrumentID
-	having		sum(iif(RecordType = 'T', 1, 0)) > {RESULT_COUNT}
-			or	sum(iif(RecordType = 'V', 1, 0)) > {RESULT_COUNT}
-			or	sum(iif(RecordType = 'E', 1, 0)) > {RESULT_COUNT}
+	having		sum(iif(RecordType = 'T', 1, 0)) > 0
+			or	sum(iif(RecordType = 'V', 1, 0)) > 0
+			or	sum(iif(RecordType = 'E', 1, 0)) > 0
 ) ins_q
 order by	InstrumentID";
+
+        private readonly static string sql_trade = $@"
+select row_number() over(order by DateTimeEn desc) - 1 as Offset
+     , DateTimeEn, ClosePrice, RecordType
+from Trade where InstrumentID = @InstrumentID
+order by DateTimeEn desc offset @Offset rows fetch first @Count rows only";
         #endregion
 
     }
