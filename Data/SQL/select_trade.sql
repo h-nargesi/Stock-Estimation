@@ -1,9 +1,9 @@
 use RahavardNovin3;
 go
 
-declare @ID int = 20038;
+declare @ID int = 13;
 declare @Type char(1) = 'T';
-declare @Offset bigint = 771;
+declare @Offset bigint = 2812;
 
 --create or alter procedure GetTrade  @ID int, @Type char(1), @Offset bigint as
 
@@ -16,11 +16,11 @@ YEARS_COUNT = 3;
 
 ---- POINTER
 with pointer as (
-	select		lag(DateTimeEn, 20/*RESULT_COUNT*/) over (order by DateTimeEn desc) as StartDateEn
+	select		DateTimeEn as StartDateEn--lag(DateTimeEn, 20/*RESULT_COUNT*/) over (order by DateTimeEn desc) as StartDateEn
 	from		Trade
 	where		InstrumentID = @ID and RecordType = @Type
 	order by	DateTimeEn desc
-	offset		20/*RESULT_COUNT*/ + @Offset rows
+	offset		@Offset rows
 	fetch		first 1 rows only
 
 -- RESTRICTION
