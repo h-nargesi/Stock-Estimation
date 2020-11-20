@@ -30,5 +30,11 @@ namespace Photon.Jiringi.DataCaching
                 result[i] = new CacherArray<T>(checker);
             return result;
         }
+
+
+        public override string ToString()
+        {
+            return $"All: " + base.ToString();
+        }
     }
 }

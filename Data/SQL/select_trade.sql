@@ -3,7 +3,7 @@ go
 
 declare @ID int = 13;
 declare @Type char(1) = 'T';
-declare @Offset bigint = 2812;
+declare @Offset bigint = 2676;
 
 --create or alter procedure GetTrade  @ID int, @Type char(1), @Offset bigint as
 
@@ -31,7 +31,7 @@ with pointer as (
 		from		Trade t
 		where		InstrumentID = @ID and DateTimeEn < p_end.EndDateEn
 		order by	DateTimeEn desc
-		offset		60/*SIGNAL_LAST_YEARS*/ rows
+		offset		70/*SIGNAL_LAST_YEARS*/ rows
 		fetch		first 1 rows only
 				) as EndDateEn
 	from (
@@ -152,5 +152,6 @@ where		InstrumentID = @ID and DateTimeEn between EndDateEn and StartDateEn
 )
 
 --select * from pointer
-select * from label order by DateTimeEn desc 
+select *, dbo.jalali(DateTimeEn) as DateTimeJl from label order by DateTimeEn desc 
+--select *, dbo.jalali(DateTimeEn) as DateTimeJl from section order by Section, Ranking
 --select ChangePercent from section order by Section, Ranking

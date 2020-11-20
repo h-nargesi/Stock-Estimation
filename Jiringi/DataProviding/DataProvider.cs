@@ -114,6 +114,11 @@ namespace Photon.Jiringi.DataProviding
                     _ => throw new Exception("Invalid stage type"),
                 };
 
+                if(instrument_id == 58)
+                {
+
+                }
+
                 var cache = caches[instrument_id];
 
                 lock (sqlite_lock)
@@ -159,7 +164,7 @@ namespace Photon.Jiringi.DataProviding
 
                 Convertor.BinaryState(instrument_id, signal, ref s);
 
-#if DEBUG
+#if DEBUG && TEST_OLD
                 var (old_result, old_signal) = PrepareNextData_OLD(offset, stage);
                 for (r = 0; r < RESULT_COUNT; r++)
                     if (!Compere(old_result[r], result[r], 8))
@@ -252,14 +257,14 @@ namespace Photon.Jiringi.DataProviding
             }
         }
 
-#if DEBUG
+#if DEBUG && TEST_OLD
         private bool Compere(double a, double b, int digits)
         {
-            string 
-                sa = Math.Round(a, digits).ToString("R"), 
-                sb = Math.Round(b, digits).ToString("R");
-            if (sa.Length > digits) sa = sa.Substring(0, digits);
-            if (sb.Length > digits) sb = sb.Substring(0, digits);
+            a = 1 + Math.Round(a, digits);
+            b = 1 + Math.Round(b, digits);
+            string sa = a.ToString("R"), sb = b.ToString("R");
+            //if (sa.Length > digits) sa = sa.Substring(0, digits);
+            //if (sb.Length > digits) sb = sb.Substring(0, digits);
             return sa == sb;
         }
         private (double[], double[]) PrepareNextData_OLD(uint offset, TraingingStages stage)
@@ -303,36 +308,6 @@ namespace Photon.Jiringi.DataProviding
                 throw new Exception($"Invalid data size offset({offset}) record({record_offset}).");
 
             return (result, signal);
-        }
-        private (uint offset, int instrument_id) FindCompany_OLD(List<Step> cumulative_frequency, uint offset)
-        {
-            if (offset <= 0)
-            {
-                company_step = 0;
-                var inst = cumulative_frequency[company_step];
-                return (inst.start_point, inst.instrument);
-            }
-
-            int start = 0, top = cumulative_frequency.Count;
-            Step left, right;
-            while (true)
-            {
-                left = cumulative_frequency[company_step];
-                if (company_step + 1 < cumulative_frequency.Count)
-                    right = cumulative_frequency[company_step + 1];
-                else return (offset - left.start_point, left.instrument);
-
-                if (left.start_point <= offset && offset < right.start_point)
-                    return (offset - left.start_point, left.instrument);
-                else if (offset == right.start_point)
-                {
-                    company_step++;
-                    return (offset - right.start_point, right.instrument);
-                }
-                else if (offset > right.start_point) start = company_step + 1;
-                else if (left.start_point > offset) top = company_step;
-                company_step = (top + start) / 2;
-            }
         }
 #endif
 

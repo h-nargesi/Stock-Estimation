@@ -15,6 +15,7 @@ namespace Photon.Jiringi.DataCaching
                 else OutputCount += caches[c].OutputCount;
         }
 
+        private int first_empty_cache = 0;
         private readonly ICache<T>[] caches;
 
         public bool IsFull => caches[^1].IsFull;
@@ -25,32 +26,38 @@ namespace Photon.Jiringi.DataCaching
 
         public void InjectDataToFirst(T leader, LinkedList<T> cargo)
         {
+            LastValue = null;
+            first_empty_cache = 0;
             RealDataCount = 0;
 
+            int i = 0;
             foreach (var cache in caches)
-                if (cargo.Count > 0)
-                {
-                    cache.InjectDataToFirst(leader, cargo);
-                    RealDataCount += cache.RealDataCount;
-                    LastValue = cache.LastValue;
-                }
-                else break;
+            {
+                cache.InjectDataToFirst(leader, cargo);
+                RealDataCount += cache.RealDataCount;
+                if (cache.LastValue.HasValue) LastValue = cache.LastValue;
+                if (cache.RealDataCount > 0) first_empty_cache = i;
+                i++;
+            }
         }
         public void InjectDataToLast(T leader, LinkedList<T> cargo)
         {
-            RealDataCount = 0;
+            if (cargo.Count < 1) return;
 
-            foreach (var cache in caches)
-                if (cargo.Count > 0)
-                {
-                    cache.InjectDataToLast(leader, cargo);
-                    RealDataCount += cache.RealDataCount;
-                    LastValue = cache.LastValue;
-                }
+            while (first_empty_cache < caches.Length)
+            {
+                RealDataCount -= caches[first_empty_cache].RealDataCount;
+                caches[first_empty_cache].InjectDataToLast(leader, cargo);
+                RealDataCount += caches[first_empty_cache].RealDataCount;
+                LastValue = caches[first_empty_cache].LastValue;
+
+                if (cargo.Count > 0) first_empty_cache++;
                 else break;
+            }
         }
         public void Clear()
         {
+            first_empty_cache = 0;
             RealDataCount = 0;
             LastValue = null;
             foreach (var cache in caches)
@@ -91,6 +98,17 @@ namespace Photon.Jiringi.DataCaching
             for (var i = 0; i < count; i++)
                 result[i] = new CacherGap<T>(checker);
             return new CacheCollection<T>(result);
+        }
+
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+
+            foreach (var cache in caches)
+                result.Append(",").Append(cache.ToString());
+            if (result.Length > 0) result.Remove(0, 1);
+
+            return result.ToString();
         }
     }
 }

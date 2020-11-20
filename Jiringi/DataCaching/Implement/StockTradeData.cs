@@ -7,13 +7,15 @@ namespace Photon.Jiringi.DataCaching
 {
     public struct StockTradeData : ICacheData
     {
-        public StockTradeData(uint offset, IDateInfo date, decimal price, double change, char? type)
+        public StockTradeData(uint offset, IDateInfo date, decimal price, 
+            double change, char? type, IDateInfo next_date)
         {
             Date = date ?? throw new ArgumentNullException(nameof(date));
             Offset = offset;
             Price = price;
             Change = change;
             RecordType = type;
+            NextDate = next_date;
         }
 
         public uint Offset { get; }
@@ -22,6 +24,7 @@ namespace Photon.Jiringi.DataCaching
         public double Change { get; }
         public double Value => Change;
         public char? RecordType { get; }
+        public IDateInfo NextDate { get; }
 
         public override string ToString()
         {

@@ -8,9 +8,9 @@ namespace Photon.Jiringi.DataCaching
     {
         public CacherGap(IOverFlowCheck<T> checker) : base(checker) { }
 
-        public override void FillBuffer(double[] buffer, ref int index) { }
-
         public override uint OutputCount => 0;
+
+        public override void FillBuffer(double[] buffer, ref int index) { }
 
         public static CacherGap<T>[] CreateMulti(int count, IOverFlowCheck<T> checker)
         {
@@ -18,6 +18,11 @@ namespace Photon.Jiringi.DataCaching
             for (var i = 0; i < count; i++)
                 result[i] = new CacherGap<T>(checker);
             return result;
+        }
+
+        public override string ToString()
+        {
+            return $"Gap: " + base.ToString();
         }
     }
 }

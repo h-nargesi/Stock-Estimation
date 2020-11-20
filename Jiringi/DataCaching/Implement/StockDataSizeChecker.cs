@@ -16,10 +16,14 @@ namespace Photon.Jiringi.DataCaching
 
         public int MaxLength { get; }
 
-        public bool OverFlow(IReadOnlyCollection<StockTradeData> cache,
-            StockTradeData last_value, StockTradeData leader)
+        public int OverFlow(IReverseEnumerable<StockTradeData> cache, StockTradeData leader)
         {
-            return cache.Count >= MaxLength;
+            return Math.Max(0, cache.Count - MaxLength);
+        }
+
+        public override string ToString()
+        {
+            return $"max({MaxLength})";
         }
     }
 }

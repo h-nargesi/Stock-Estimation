@@ -9,9 +9,11 @@ namespace Photon.Jiringi.DataCaching
         public Cacher(IOverFlowCheck<T> checker)
         {
             cache = new LinkedList<T>();
+            reverse_enumerator = new ReverseLinkedListEnumerable<T>(cache);
             overflow_checker = checker ?? throw new ArgumentNullException(nameof(checker));
         }
 
+        private readonly ReverseLinkedListEnumerable<T> reverse_enumerator;
         protected readonly IOverFlowCheck<T> overflow_checker;
         protected readonly LinkedList<T> cache;
 
@@ -23,35 +25,69 @@ namespace Photon.Jiringi.DataCaching
 
         public virtual void InjectDataToFirst(T leader, LinkedList<T> cargo)
         {
-            // inject the input values
-            while (cargo.Count > 0)
+            if (cache.Count < 1)
             {
-                cache.AddFirst(cargo.Last.Value);
-                cargo.RemoveLast();
-            }
+                if (cargo.Count < 1) return;
 
-            // check existing overflow
-            while (cache.Count > 0 &&
-                overflow_checker.OverFlow(cache, cache.Last.Value, leader))
+                // we assume the cargo pushed in cache
+                // check cargo overflow
+                var out_count = overflow_checker.OverFlow(new ReverseLinkedListEnumerable<T>(cargo), leader);
+                // set the is-full
+                IsFull = out_count > 0;
+
+                out_count = cargo.Count - out_count;
+                while (out_count-- > 0)
+                {
+                    // the first value from cargo stay in cache 
+                    // and remind will out of cache
+                    cache.AddLast(cargo.First.Value);
+                    cargo.RemoveFirst();
+                }
+            }
+            else
             {
-                cargo.AddFirst(cache.Last.Value);
-                cache.RemoveLast();
-            }
+                // inject the input values
+                while (cargo.Count > 0)
+                {
+                    cache.AddFirst(cargo.Last.Value);
+                    cargo.RemoveLast();
+                }
 
-            // reset the is-full
-            IsFull = cargo.Count > 0;
+                // check existing cache overflow
+                var out_count = overflow_checker.OverFlow(reverse_enumerator, leader);
+                // set the is-full
+                IsFull = out_count > 0;
+
+                // remove overflow
+                while (cache.Count > 0 && out_count-- > 0)
+                {
+                    cargo.AddFirst(cache.Last.Value);
+                    cache.RemoveLast();
+                }
+            }
         }
         public virtual void InjectDataToLast(T leader, LinkedList<T> cargo)
         {
-            while (cargo.Count > 0 &&
-                !overflow_checker.OverFlow(cache, cargo.First.Value, leader))
+            if (cargo.Count < 1) return;
+
+            // inject the input values
+            while (cargo.Count > 0)
             {
                 cache.AddLast(cargo.First.Value);
                 cargo.RemoveFirst();
             }
 
-            // reset the is-full
-            IsFull = cargo.Count > 0;
+            // check existing cache overflow
+            var out_count = overflow_checker.OverFlow(reverse_enumerator, leader);
+            // set the is-full
+            IsFull = out_count > 0;
+
+            // remove overflow
+            while (cache.Count > 0 && out_count-- > 0)
+            {
+                cargo.AddFirst(cache.Last.Value);
+                cache.RemoveLast();
+            }
         }
         public virtual void Clear()
         {
@@ -71,5 +107,9 @@ namespace Photon.Jiringi.DataCaching
             }
         }
 
+        public override string ToString()
+        {
+            return $"({RealDataCount})to-{overflow_checker}";
+        }
     }
 }

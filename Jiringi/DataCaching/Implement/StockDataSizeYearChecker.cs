@@ -9,25 +9,34 @@ namespace Photon.Jiringi.DataCaching
     {
         public StockDataSizeYearChecker(int maximum_size, int year_diff)
         {
-            this.MaxLength = maximum_size;
+            if (maximum_size < 0)
+                throw new ArgumentOutOfRangeException(nameof(maximum_size), "Must be greater than and equal zero.");
+
+            MaxLength = maximum_size;
             this.year_diff = year_diff;
         }
 
         public readonly int year_diff;
         public int MaxLength { get; }
 
-        public bool OverFlow(IReadOnlyCollection<StockTradeData> cache,
-            StockTradeData last_value, StockTradeData leader)
+        public int OverFlow(IReverseEnumerable<StockTradeData> cache, StockTradeData leader)
         {
-            if (cache.Count >= MaxLength) return true;
+            var criterion_year = leader.Date.Year - year_diff;
+            var out_count = 0;
 
-            var criterion_yesr = leader.Date.Year - year_diff;
-            if (last_value.Date.Year < criterion_yesr) return true;
-            else if (last_value.Date.Year > criterion_yesr) return false;
-            else if (last_value.Date.Month < leader.Date.Month) return true;
-            else if (last_value.Date.Month > leader.Date.Month) return false;
-            else if (last_value.Date.Day <= leader.Date.Day) return true;
-            else return false;
+            foreach (var last in cache)
+                if (last.NextDate.Year < criterion_year) out_count++;
+                else if (last.NextDate.Year > criterion_year) break;
+                else if (last.NextDate.Month < leader.Date.Month) out_count++;
+                else if (last.NextDate.Month > leader.Date.Month) break;
+                else if (last.NextDate.Day < leader.Date.Day) out_count++;
+                else break;
+
+            return Math.Max(out_count, cache.Count - MaxLength);
+        }
+        public override string ToString()
+        {
+            return $"max({MaxLength})|date({year_diff})";
         }
     }
 }
