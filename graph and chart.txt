@@ -1,2 +1,0 @@
-https://stackoverflow.com/questions/577278/wpf-chart-controls
-https://github.com/Live-Charts/Live-Charts
