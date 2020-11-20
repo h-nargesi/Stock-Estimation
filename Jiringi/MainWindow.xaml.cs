@@ -42,6 +42,8 @@ namespace Photon.Jiringi
         private TimeReporter time_reporter;
         private const int report_time_interval = 30 * 10000;
         private long last_time_reported = 0;
+        private int last_instrument_id = -1;
+        private uint last_offset = 0, last_record_offset = 0;
 
         private void Initialize_Instructor()
         {
@@ -52,6 +54,18 @@ namespace Photon.Jiringi
         private void Instructor_ReflectFinished(Instructor instructor, Record record, long duration)
         {
             var offset_interval = time_reporter.GetNextAvg();
+
+            var (current_instrument_id, current_offset, current_record_offset) =
+                (ValueTuple<int, uint, uint>)record.extra;
+            if (last_instrument_id != current_instrument_id)
+            {
+                if (last_instrument_id > -1)
+                    Log($"End Section:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
+                Log($"Start Section:\tinstrument-id({current_instrument_id})\toffset({current_offset})\trecord({current_record_offset})");
+            }
+            last_instrument_id = current_instrument_id;
+            last_offset = current_offset;
+            last_record_offset = current_record_offset;
 
             if (DateTime.Now.Ticks - last_time_reported > report_time_interval)
             {
@@ -80,8 +94,9 @@ namespace Photon.Jiringi
                 // prepare report string
                 var progress = instructor.Offset * 100D / done_count;
                 string process_info =
-                    @$"#{instructor.Epoch} {instructor.Stage} {PrintUnsign(progress, 3):R}%";
-                string message = @$"Data loading={Instructor.GetDurationString(record.duration.Value)} Prediction={Instructor.GetDurationString(duration)} Left time={Instructor.GetDurationString(offset_interval * remain_count)}";
+@$"#{instructor.Epoch} {instructor.Stage} {PrintUnsign(progress, 3):R}% ID({current_instrument_id})";
+                string message =
+@$"Data loading={Instructor.GetDurationString(record.duration.Value)} Prediction={Instructor.GetDurationString(duration)} Left time={Instructor.GetDurationString(offset_interval * remain_count)}";
 
                 last_time_reported = DateTime.Now.Ticks;
 
@@ -155,6 +170,8 @@ namespace Photon.Jiringi
             if (instructor != null)
             {
                 instructor.Stop();
+                Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
+                last_instrument_id = -1;
                 ChangeStatusWithSave(INFO, "The training process is stoped by user.");
             }
             Dispatcher.Invoke(() =>
@@ -257,7 +274,11 @@ namespace Photon.Jiringi
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             if (instructor != null)
+            {
+                // Training_Stop(sender, new RoutedEventArgs());
+                Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
                 TrainProcessSerializer.Serialize("temp.nnp", instructor);
+            }
             File.AppendAllText("logs", logs.ToString());
             App.Setting.Save();
         }
@@ -279,7 +300,7 @@ namespace Photon.Jiringi
                 foreach (var prc in instructor.OutOfLine)
                     accuracy = Math.Max(prc.accuracy, accuracy);
 
-                cur_proc += $"Done [{instructor.OutOfLine.Count} net(s), " +
+                cur_proc += $" Done [{instructor.OutOfLine.Count} net(s), " +
                     $"best:{PrintUnsign(accuracy * 100, 4):R}]";
             }
 
@@ -295,7 +316,7 @@ namespace Photon.Jiringi
         }
         private void ChangeStatusWithSave(Brush state, string message)
         {
-            logs.Append(message).Append("\r\n");
+            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
 
             Dispatcher.Invoke(() =>
             {
@@ -306,7 +327,8 @@ namespace Photon.Jiringi
         }
         private void ChangeStatusWithReport(Brush state, string message, string report)
         {
-            logs.Append(report).Append("\r\n");
+            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
+            logs.Append(DateTime.Now).Append("\r\n").Append(report).Append("\r\n");
 
             Dispatcher.Invoke(() =>
             {
@@ -314,6 +336,11 @@ namespace Photon.Jiringi
                 StatusMessage.Text = message;
                 Logs.Text = logs.ToString();
             });
+        }
+        private void Log(string message)
+        {
+            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
+            Dispatcher.Invoke(() => Logs.Text = logs.ToString());
         }
 
         public static readonly SolidColorBrush
