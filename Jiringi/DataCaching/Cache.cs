@@ -30,7 +30,7 @@ namespace Photon.Jiringi.DataCaching
 
             double change;
             if (!caches[0].FirstValue.HasValue) change = 0;
-            else change = (double)(price / caches[0].FirstValue.Value.Price) - 1D;
+            else change = 100D * ((double)(price / caches[0].FirstValue.Value.Price) - 1D);
             if (double.IsNaN(change)) throw new Exception("Invalid NaN input data.");
 
             var leader = new StockTradeData(offset, new Jalali(date).GetDate(), price, change, type);
@@ -62,7 +62,7 @@ namespace Photon.Jiringi.DataCaching
             (offset, date, price, type) = last_injected_to_last.Value;
             last_injected_to_last = new_last_value;
 
-            var change = (double)(price / new_last_value.price) - 1D;
+            var change = 100D * ((double)(price / new_last_value.price) - 1D);
             if (double.IsNaN(change)) throw new Exception("Invalid NaN input data.");
 
             var cargo = new LinkedList<StockTradeData>();

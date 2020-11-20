@@ -89,7 +89,7 @@ namespace Photon.Jiringi.DataProviding
 
                     if (!caches.ContainsKey(instrument_id))
                         caches.Add(instrument_id, Cache.Build(
-                            RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
+                            RECORDS_THIS_YEAR_IN_SIGNAL + RESULT_COUNT, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
                 }
 
                 if (cumulative_frequency_training.Count == 0)
@@ -159,7 +159,18 @@ namespace Photon.Jiringi.DataProviding
 
                 Convertor.BinaryState(instrument_id, signal, ref s);
 
-                return new Record(signal, result, instrument_id, DateTime.Now.Ticks - start_time);
+#if DEBUG
+                var (old_result, old_signal) = PrepareNextData_OLD(offset, stage);
+                for (r = 0; r < RESULT_COUNT; r++)
+                    if (!Compere(old_result[r], result[r], 8))
+                        throw new Exception($"Old version mismatched in result({r})");
+                for (s = 0; s < SIGNAL_COUNT; s++)
+                    if (!Compere(old_signal[s], signal[s], 8))
+                        throw new Exception($"Old version mismatched in signal({s})");
+#endif
+
+                return new Record(signal, result, DateTime.Now.Ticks - start_time,
+                    (instrument_id, offset, record_offset));
             });
         }
         private (int id, uint rec_offset) FindCompany(List<Step> cumulative_frequency, uint offset)
@@ -240,6 +251,90 @@ namespace Photon.Jiringi.DataProviding
                 // DO NOT BREAK. we should go to criterion offset
             }
         }
+
+#if DEBUG
+        private bool Compere(double a, double b, int digits)
+        {
+            string 
+                sa = Math.Round(a, digits).ToString("R"), 
+                sb = Math.Round(b, digits).ToString("R");
+            if (sa.Length > digits) sa = sa.Substring(0, digits);
+            if (sb.Length > digits) sb = sb.Substring(0, digits);
+            return sa == sb;
+        }
+        private (double[], double[]) PrepareNextData_OLD(uint offset, TraingingStages stage)
+        {
+            var result = new double[RESULT_COUNT];
+            var signal = new double[SIGNAL_COUNT];
+
+            int r = 0, s = 0;
+            var (company_id, record_offset) = stage switch
+            {
+                TraingingStages.Training => FindCompany(cumulative_frequency_training, offset),
+                TraingingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
+                TraingingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
+                _ => throw new Exception("Invalid stage type"),
+            };
+
+            lock (sqlite_lock)
+                if (sqlite != null)
+                {
+                    sqlite.CommandText = "GetTrade";
+                    sqlite.CommandType = CommandType.StoredProcedure;
+                    sqlite.Parameters.Clear();
+                    sqlite.Parameters.Add("@ID", SqlDbType.Int).Value = company_id;
+                    sqlite.Parameters.Add("@Type", SqlDbType.Char, 1).Value = stage.ToString()[0];
+                    sqlite.Parameters.Add("@Offset", SqlDbType.Int).Value = record_offset;
+                    using (var reader = sqlite.ExecuteReader())
+                        while (reader.Read())
+                        {
+                            if (r < RESULT_COUNT) result[r++] = (double)(decimal)reader[0];
+                            else if (s < SIGNAL_COUNT) signal[s++] = (double)(decimal)reader[0];
+                            else break;
+                        }
+                    sqlite.CommandText = sql_trade;
+                    sqlite.CommandType = CommandType.Text;
+                }
+
+            if (s <= SIGNAL_COUNT - INSTRUNMENT_ID)
+                Convertor.BinaryState(company_id, signal, ref s);
+
+            if (r < RESULT_COUNT || s < SIGNAL_COUNT)
+                throw new Exception($"Invalid data size offset({offset}) record({record_offset}).");
+
+            return (result, signal);
+        }
+        private (uint offset, int instrument_id) FindCompany_OLD(List<Step> cumulative_frequency, uint offset)
+        {
+            if (offset <= 0)
+            {
+                company_step = 0;
+                var inst = cumulative_frequency[company_step];
+                return (inst.start_point, inst.instrument);
+            }
+
+            int start = 0, top = cumulative_frequency.Count;
+            Step left, right;
+            while (true)
+            {
+                left = cumulative_frequency[company_step];
+                if (company_step + 1 < cumulative_frequency.Count)
+                    right = cumulative_frequency[company_step + 1];
+                else return (offset - left.start_point, left.instrument);
+
+                if (left.start_point <= offset && offset < right.start_point)
+                    return (offset - left.start_point, left.instrument);
+                else if (offset == right.start_point)
+                {
+                    company_step++;
+                    return (offset - right.start_point, right.instrument);
+                }
+                else if (offset > right.start_point) start = company_step + 1;
+                else if (left.start_point > offset) top = company_step;
+                company_step = (top + start) / 2;
+            }
+        }
+#endif
 
         public void Dispose()
         {
