@@ -89,11 +89,11 @@ namespace Photon.Jiringi.DataProviding
 
                     if (!caches.ContainsKey(instrument_id))
                         caches.Add(instrument_id, Cache.Build(
-                            RECORDS_THIS_YEAR_IN_SIGNAL + RESULT_COUNT, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
+                            RESULT_COUNT, RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
                 }
 
-                if (cumulative_frequency_training.Count == 0)
-                    throw new Exception("The data set is empty.");
+                /*if (cumulative_frequency_training.Count == 0)
+                    throw new Exception("The data set is empty.");*/
 
                 sqlite.CommandText = sql_trade;
             }
@@ -113,11 +113,6 @@ namespace Photon.Jiringi.DataProviding
                     TraingingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
                     _ => throw new Exception("Invalid stage type"),
                 };
-
-                if(instrument_id == 58)
-                {
-
-                }
 
                 var cache = caches[instrument_id];
 

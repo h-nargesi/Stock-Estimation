@@ -38,7 +38,7 @@ namespace Photon.Jiringi
         }
 
         private readonly DataProvider data_provider;
-        private Instructor instructor;
+        private Instructor process;
         private TimeReporter time_reporter;
         private const int report_time_interval = 30 * 10000;
         private long last_time_reported = 0;
@@ -47,12 +47,13 @@ namespace Photon.Jiringi
 
         private void Initialize_Instructor()
         {
-            instructor = new Instructor(data_provider);
-            instructor.ReflectFinished += Instructor_ReflectFinished;
-            instructor.OnError += Instructor_OnError;
+            process = new Instructor(data_provider);
+            process.ReflectFinished += Instructor_ReflectFinished;
+            process.OnError += Instructor_OnError;
         }
         private void Instructor_ReflectFinished(Instructor instructor, Record record, long duration)
         {
+            // TODO: use time_reporter for data-time and predict-time
             var offset_interval = time_reporter.GetNextAvg();
 
             var (current_instrument_id, current_offset, current_record_offset) =
@@ -128,52 +129,87 @@ namespace Photon.Jiringi
             return val.ToString("R");
         }
 
-        private void Training_Start(object sender, RoutedEventArgs e)
+        private void Instruction_Process(object sender, RoutedEventArgs e)
         {
-            if (instructor == null)
-                ChangeStatusWithSave(ERROR, "The instructor is not inizialized.");
+            if (process == null)
+            {
+                HideProcessBar();
+                ChangeStatusWithSave(ERROR, "The process is not inizialized.");
+            }
+            else if (!process.Stopped)
+                ChangeStatusWithSave(INFO, "The process already is running.");
+
+            else Process_Start(null);
+        }
+        private void Evaluation_Process(object sender, RoutedEventArgs e)
+        {
+            if (process == null)
+            {
+                HideProcessBar();
+                ChangeStatusWithSave(ERROR, "The process is not inizialized.");
+            }
+            else if (!process.Stopped)
+                ChangeStatusWithSave(INFO, "The process already is running.");
+
             else
             {
-                Dispatcher.Invoke(() =>
-                {
-                    ProgressPanel.Visibility = Visibility.Visible;
-                    ProgressBar.Maximum = 100;
-                });
-
-                // reset stage
-                var stage = App.Setting.Process.Stage;
-                if (stage != null)
-                {
-                    instructor.Stage = stage.Value;
-                    App.Setting.Process.Stage = null;
-                }
-
-                // reset offsets
-                var offset = App.Setting.Process.Offset;
-                if (offset != null)
-                {
-                    instructor.Offset = offset.Value;
-                    App.Setting.Process.Offset = null;
-                }
-
-
-                time_reporter = new TimeReporter
-                {
-                    MaxHistory = App.Setting.Process.LeftTimeEstimateLength
-                };
-
-                instructor.Start();
+                process.Epoch = 0;
+                process.Offset = 0;
+                Process_Start(TraingingStages.Evaluation);
             }
         }
-        private void Training_Stop(object sender, RoutedEventArgs e)
+        private void Process_Start(TraingingStages? filter)
         {
-            if (instructor != null)
+            Dispatcher.Invoke(() =>
             {
-                instructor.Stop();
+                ProgressPanel.Visibility = Visibility.Visible;
+                ProgressBar.Maximum = 100;
+            });
+
+            // reset stage
+            var stage = App.Setting.Process.Stage;
+            if (stage != null)
+            {
+                process.Stage = stage.Value;
+                App.Setting.Process.Stage = null;
+            }
+
+            // reset offsets
+            var offset = App.Setting.Process.Offset;
+            if (offset != null)
+            {
+                process.Offset = offset.Value;
+                App.Setting.Process.Offset = null;
+            }
+
+            time_reporter = new TimeReporter
+            {
+                MaxHistory = App.Setting.Process.LeftTimeEstimateLength
+            };
+
+            switch (filter)
+            {
+                case TraingingStages.Evaluation:
+                    process.Evaluate();
+                    break;
+                default:
+                    process.Start();
+                    break;
+            }
+        }
+        private void Process_Stop(object sender, RoutedEventArgs e)
+        {
+            if (process != null)
+            {
+                process.Stop();
                 Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
                 last_instrument_id = -1;
                 ChangeStatusWithSave(INFO, "The training process is stoped by user.");
             }
+            HideProcessBar();
+        }
+        private void HideProcessBar()
+        {
             Dispatcher.Invoke(() =>
             {
                 ProgressPanel.Visibility = Visibility.Collapsed;
@@ -184,7 +220,7 @@ namespace Photon.Jiringi
 
         private void Networks_Create(object sender, RoutedEventArgs e)
         {
-            Training_Stop(sender, e);
+            Process_Stop(sender, e);
 
             ChangeStatusWithSave(INFO, "New brain ...");
 
@@ -216,7 +252,7 @@ namespace Photon.Jiringi
             Initialize_Instructor();
 
             foreach (var image in images)
-                instructor.AddProgress(new Brain(image)
+                process.AddProgress(new Brain(image)
                 {
                     LearningFactor = App.Setting.Brain.LearningFactor,
                     CertaintyFactor = App.Setting.Brain.CertaintyFactor,
@@ -240,9 +276,9 @@ namespace Photon.Jiringi
             switch (file)
             {
                 case ProcessInfo process_info:
-                    if (instructor == null) Initialize_Instructor();
-                    else Training_Stop(sender, e);
-                    instructor.LoadProgress(process_info);
+                    if (process == null) Initialize_Instructor();
+                    else Process_Stop(sender, e);
+                    process.LoadProgress(process_info);
                     Networks_Report();
                     break;
 
@@ -255,12 +291,13 @@ namespace Photon.Jiringi
         }
         private void Networks_Save(object sender, RoutedEventArgs e)
         {
-            if (instructor == null)
+            if (process is Instructor instructor)
+                ChangeStatusWithSave(INFO, "Saving neural network instructor ...");
+            else
             {
-                ChangeStatusWithSave(ERROR, "The neural network process is not loaded.");
+                ChangeStatusWithSave(ERROR, "The neural network instructor is not loaded.");
                 return;
             }
-            else ChangeStatusWithSave(INFO, "Saving neural network process ...");
 
             var saving = new SaveFileDialog();
             if (saving.ShowDialog() != true) return;
@@ -273,11 +310,12 @@ namespace Photon.Jiringi
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            if (instructor != null)
+            if (process != null)
             {
                 // Training_Stop(sender, new RoutedEventArgs());
                 Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
-                TrainProcessSerializer.Serialize("temp.nnp", instructor);
+                if (process is Instructor instructor)
+                    TrainProcessSerializer.Serialize("temp.nnp", instructor);
             }
             File.AppendAllText("logs", logs.ToString());
             App.Setting.Save();
@@ -288,17 +326,17 @@ namespace Photon.Jiringi
         {
             // prepare report info
             double accuracy = 0;
-            foreach (var prc in instructor.Processes)
+            foreach (var prc in process.Processes)
                 accuracy = Math.Max(prc.CurrentAccuracy, accuracy);
 
-            string cur_proc = $"Training [{instructor.Processes.Count} net(s), " +
+            string cur_proc = $"Current [{process.Processes.Count} net(s), " +
                 $"best:{PrintUnsign(accuracy * 100, 4):R}]";
 
-            if (instructor.OutOfLine.Count > 0)
+            if (process is Instructor instructor && instructor.OutOfLine.Count > 0)
             {
                 accuracy = 0;
                 foreach (var prc in instructor.OutOfLine)
-                    accuracy = Math.Max(prc.accuracy, accuracy);
+                    accuracy = Math.Max(prc.Accuracy, accuracy);
 
                 cur_proc += $" Done [{instructor.OutOfLine.Count} net(s), " +
                     $"best:{PrintUnsign(accuracy * 100, 4):R}]";

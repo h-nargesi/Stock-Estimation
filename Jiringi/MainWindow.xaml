@@ -16,8 +16,9 @@
             </MenuItem>
             <MenuItem Header="Data Provider"></MenuItem>
             <MenuItem Header="Training">
-                <MenuItem Header="Start" Click="Training_Start"></MenuItem>
-                <MenuItem Header="Stop" Click="Training_Stop"></MenuItem>
+                <MenuItem Header="Instructor" Click="Instruction_Process"></MenuItem>
+                <MenuItem Header="Evaluation" Click="Evaluation_Process"></MenuItem>
+                <MenuItem Header="Stop" Click="Process_Stop"></MenuItem>
             </MenuItem>
         </Menu>
         <StatusBar Name="StatusPanel" VerticalAlignment="Bottom" DockPanel.Dock="Bottom"
