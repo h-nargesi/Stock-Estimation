@@ -39,7 +39,7 @@ namespace Photon.Jiringi
 
         private readonly DataProvider data_provider;
         private Instructor process;
-        private TimeReporter time_reporter;
+        private TimeReporter[] time_reporter;
         private const int report_time_interval = 30 * 10000;
         private long last_time_reported = 0;
         private int last_instrument_id = -1;
@@ -54,7 +54,9 @@ namespace Photon.Jiringi
         private void Instructor_ReflectFinished(Instructor instructor, Record record, long duration)
         {
             // TODO: use time_reporter for data-time and predict-time
-            var offset_interval = time_reporter.GetNextAvg();
+            var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
+            duration = time_reporter[1].GetNextAvg(duration);
+            var offset_interval = time_reporter[2].GetNextAvg();
 
             var (current_instrument_id, current_offset, current_record_offset) =
                 (ValueTuple<int, uint, uint>)record.extra;
@@ -97,7 +99,7 @@ namespace Photon.Jiringi
                 string process_info =
 @$"#{instructor.Epoch} {instructor.Stage} {PrintUnsign(progress, 3):R}% ID({current_instrument_id})";
                 string message =
-@$"Data loading={Instructor.GetDurationString(record.duration.Value)} Prediction={Instructor.GetDurationString(duration)} Left time={Instructor.GetDurationString(offset_interval * remain_count)}";
+@$"Data loading={Instructor.GetDurationString(record_duration, 6)} Prediction={Instructor.GetDurationString(duration, 6)} Left time={Instructor.GetDurationString(offset_interval * remain_count, 3)}";
 
                 last_time_reported = DateTime.Now.Ticks;
 
@@ -182,9 +184,20 @@ namespace Photon.Jiringi
                 App.Setting.Process.Offset = null;
             }
 
-            time_reporter = new TimeReporter
+            time_reporter = new TimeReporter[]
             {
-                MaxHistory = App.Setting.Process.LeftTimeEstimateLength
+                new TimeReporter
+                {
+                    MaxHistory = App.Setting.Process.LeftTimeEstimateLength / 100
+                },
+                new TimeReporter
+                {
+                    MaxHistory = App.Setting.Process.LeftTimeEstimateLength / 100
+                },
+                new TimeReporter
+                {
+                    MaxHistory = App.Setting.Process.LeftTimeEstimateLength
+                }
             };
 
             switch (filter)
