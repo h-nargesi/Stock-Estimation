@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -23,6 +24,23 @@ namespace Photon.Jiringi
 
             DataValues = new ChartValues<ObservableValue>();
             PredictedValues = new ChartValues<ObservableValue>();
+
+            App.FileSettingChanged += SettingChanged;
+        }
+
+        private void SettingChanged(object sender, EventArgs e)
+        {
+            if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible && !Stopped)
+            {
+                PredictedValues.Clear();
+                DataValues.Clear();
+            }
+
+            TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+
+            GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
         }
 
 
@@ -104,7 +122,7 @@ namespace Photon.Jiringi
         #region Instructor Events
 
         private const int report_time_interval = 30 * 10000;
-        private long last_time_text_reported, last_time_graph_reported;
+        private long last_time_text_reported;
         private int last_instrument_id = -1;
         private uint last_offset = 0, last_record_offset = 0;
         private readonly TimeReporter[] time_reporter;
@@ -142,16 +160,14 @@ namespace Photon.Jiringi
                 MaxHistory = App.Setting.Process.LeftTimeEstimateLength
             };
 
-            if (TextReporting == Visibility.Visible != App.Setting.Process.TextReporting)
-                TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
-
             PredictedValues.Clear();
             DataValues.Clear();
-            if (GraphReporting == Visibility.Visible != App.Setting.Process.GraphReporting)
-                GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
 
+            TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+
+            GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
         }
         protected override void ReflectFinished(Record record, long duration, int running_code)
         {
@@ -214,43 +230,42 @@ namespace Photon.Jiringi
                 }
 
 
-            if (DateTime.Now.Ticks - last_time_graph_reported > report_time_interval * 50)
-                if (GraphReporting == Visibility.Visible)
+            if (GraphReporting == Visibility.Visible)
+            {
+                Task.Run(() =>
                 {
-                    Task.Run(() =>
+                    double accuracy = 0; double best = 0;
+                    if (running_code == (int)TraingingStages.Evaluation)
                     {
-                        double accuracy = -1; double best = -1;
-                        if (running_code == (int)TraingingStages.Evaluation)
-                        {
-                            for (var i = 0; i < OutOfLine.Count; i++)
-                                if (accuracy < OutOfLine[i].Accuracy)
-                                {
-                                    accuracy = OutOfLine[i].Accuracy;
-                                    best = OutOfLine[i].LastPrediction.ResultSignals[0];
-                                }
-                        }
-                        else
-                        {
-                            for (var i = 0; i < Processes.Count; i++)
-                                if (accuracy < Processes[i].CurrentAccuracy)
-                                {
-                                    accuracy = Processes[i].CurrentAccuracy;
-                                    best = Processes[i].LastPredict.ResultSignals[0];
-                                }
-                        }
+                        for (var i = 0; i < OutOfLine.Count; i++)
+                            if (accuracy < OutOfLine[i].Accuracy)
+                            {
+                                accuracy = OutOfLine[i].Accuracy;
+                                best = OutOfLine[i].LastPrediction.ResultSignals[0];
+                            }
+                    }
+                    else
+                    {
+                        for (var i = 0; i < Processes.Count; i++)
+                            if (accuracy < Processes[i].CurrentAccuracy)
+                            {
+                                accuracy = Processes[i].CurrentAccuracy;
+                                best = Processes[i].LastPredict.ResultSignals[0];
+                            }
+                    }
 
-                        DataValues.Add(new ObservableValue(record.result[0]));
-                        PredictedValues.Add(new ObservableValue(best));
+                    DataValues.Add(new ObservableValue(record.result[0]));
+                    PredictedValues.Add(new ObservableValue(best));
 
-                        while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
-                        while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
+                    while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
+                    while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
 
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
-                    });
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+                });
 
-                    last_time_graph_reported = DateTime.Now.Ticks;
-                }
+                Thread.Sleep(200);
+            }
         }
         protected override void OnStopped()
         {

@@ -18,7 +18,7 @@
                 <MenuItem Header="Load" Click="Networks_Load"></MenuItem>
                 <MenuItem Header="Save" Click="Networks_Save"></MenuItem>
             </MenuItem>
-            <MenuItem Header="Data Provider" Click="MenuItem_Click"></MenuItem>
+            <MenuItem Header="Data Provider"></MenuItem>
             <MenuItem Header="Training">
                 <MenuItem Header="Instructor" Click="Instruction_Process"></MenuItem>
                 <MenuItem Header="Evaluation" Click="Evaluation_Process"></MenuItem>
@@ -42,8 +42,10 @@
             <TextBox BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" Text="{Binding Logs, Mode=OneWay}" />
             <lvc:CartesianChart Background="White" Visibility="{Binding GraphReporting}">
                 <lvc:CartesianChart.Series>
-                    <lvc:LineSeries Values="{Binding DataValues}" Stroke="#FF5D62D8"></lvc:LineSeries>
-                    <lvc:LineSeries Values="{Binding PredictedValues}" Stroke="#FFD42BD4"></lvc:LineSeries>
+                    <lvc:LineSeries Values="{Binding DataValues}" Title="Data"
+                                    Stroke="#FF5D62D8" Fill="#00000000"></lvc:LineSeries>
+                    <lvc:LineSeries Values="{Binding PredictedValues}" Title="Prediction"
+                                    Stroke="#FFD42BD4" Fill="#00000000"></lvc:LineSeries>
                 </lvc:CartesianChart.Series>
             </lvc:CartesianChart>
         </Grid>

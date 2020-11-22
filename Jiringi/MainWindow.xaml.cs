@@ -150,7 +150,10 @@ namespace Photon.Jiringi
         {
             NetProcess.ChangeStatusWithSave(NetProcess.INFO, "Saving neural network instructor ...");
 
-            var saving = new SaveFileDialog();
+            var saving = new SaveFileDialog
+            {
+                Filter = "Neural Net Process|*.nnp"
+            };
             if (saving.ShowDialog() != true) return;
 
             TrainProcessSerializer.Serialize(saving.FileName, NetProcess);
@@ -162,15 +165,13 @@ namespace Photon.Jiringi
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            Process_Stop(sender, new RoutedEventArgs());
+
             NetProcess.Log($"Closing");
-            TrainProcessSerializer.Serialize("temp.nnp", NetProcess);
+            if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLine.Count > 0)
+                TrainProcessSerializer.Serialize("temp.nnp", NetProcess);
             File.AppendAllText("logs", NetProcess.Logs);
             App.Setting.Save();
-        }
-
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            //new PanelExample().Show();
         }
     }
 }
