@@ -10,19 +10,24 @@ namespace Photon.Jiringi.Config
 {
     public class RootConfigHandler : ConfigHandler
     {
-        public RootConfigHandler(string path = null) : base(Read(path)) { }
-
-
-        private static string setting_file_name = "setting.json";
-        private static JObject Read(string path = null)
+        public RootConfigHandler(string path = null) : base(Read(ref path))
         {
-            if (path != null) setting_file_name = path;
+            setting_file_name = path;
+        }
+
+        private const string default_setting_file_name = "setting.json";
+        public readonly string setting_file_name = null;
+        private static JObject Read(ref string path)
+        {
+            if (string.IsNullOrEmpty(path)) 
+                path = default_setting_file_name;
 
             try
             {
-                using var setting_file = File.Open(setting_file_name, FileMode.OpenOrCreate);
+                using var setting_file = File.Open(path, FileMode.OpenOrCreate);
                 var buffer = new byte[setting_file.Length];
                 setting_file.Read(buffer, 0, buffer.Length);
+
                 return JObject.Parse(Encoding.UTF8.GetString(buffer));
             }
             catch { return new JObject(); }
@@ -66,5 +71,6 @@ namespace Photon.Jiringi.Config
                 return process;
             }
         }
+
     }
 }
