@@ -30,6 +30,7 @@ namespace Photon.Jiringi.DataProviding
         public uint TrainingCount { get; private set; }
         public uint ValidationCount { get; private set; }
         public uint EvaluationCount { get; private set; }
+        public double FirstPrice { get; private set; }
 
         public void Initialize()
         {
@@ -149,6 +150,7 @@ namespace Photon.Jiringi.DataProviding
                 int r = 0, s = 0;
                 var buffer = new double[CACHE_OUTPUT_COUNT];
                 cache.FillBuffer(buffer, ref s);
+                FirstPrice = (double)(cache.FirstValue?.Price ?? 0);
 
                 while (r < RESULT_COUNT)
                     result[r] = buffer[r++];

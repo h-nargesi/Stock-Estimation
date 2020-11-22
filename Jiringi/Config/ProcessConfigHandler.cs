@@ -14,6 +14,8 @@ namespace Photon.Jiringi.Config
         private const string process_stage = "stage";
         private const string process_offset = "offset";
         private const string process_left_time = "left-time-estimate-length";
+        private const string process_graph_reporting = "graph-reporting";
+        private const string process_text_reporting = "text-reporting";
 
         public TraingingStages? Stage
         {
@@ -39,6 +41,20 @@ namespace Photon.Jiringi.Config
         {
             get { return GetSetting<uint>(process_left_time, 1000); }
             set { SetSetting(process_left_time, value); }
+        }
+
+        public bool TextReportingDefault { get; set; } = true;
+        public bool TextReporting
+        {
+            get { return GetSetting(process_text_reporting, TextReportingDefault); }
+            set { SetSetting(process_text_reporting, value); }
+        }
+
+        public bool GraphReportingDefault { get; set; } = true;
+        public bool GraphReporting
+        {
+            get { return GetSetting(process_graph_reporting, GraphReportingDefault); }
+            set { SetSetting(process_graph_reporting, value); }
         }
     }
 }

@@ -4,9 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Photon.Jiringi"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
         Title="Stock Trade Estimation" Height="450" Width="800"
         Closing="Window_Closing">
+    <Window.DataContext>
+        <local:NetProcess x:Name="NetProcess"></local:NetProcess>
+    </Window.DataContext>
     <DockPanel>
         <Menu VerticalAlignment="Top" DockPanel.Dock="Top">
             <MenuItem Header="Networks">
@@ -14,27 +18,34 @@
                 <MenuItem Header="Load" Click="Networks_Load"></MenuItem>
                 <MenuItem Header="Save" Click="Networks_Save"></MenuItem>
             </MenuItem>
-            <MenuItem Header="Data Provider"></MenuItem>
+            <MenuItem Header="Data Provider" Click="MenuItem_Click"></MenuItem>
             <MenuItem Header="Training">
                 <MenuItem Header="Instructor" Click="Instruction_Process"></MenuItem>
                 <MenuItem Header="Evaluation" Click="Evaluation_Process"></MenuItem>
                 <MenuItem Header="Stop" Click="Process_Stop"></MenuItem>
             </MenuItem>
         </Menu>
-        <StatusBar Name="StatusPanel" VerticalAlignment="Bottom" DockPanel.Dock="Bottom"
-                   Background="#FF404040" Foreground="#FFE6E6E6" >
+        <StatusBar VerticalAlignment="Bottom" DockPanel.Dock="Bottom"
+                   Background="{Binding StatusColor, Mode=OneWay}" Foreground="#FFE6E6E6" >
             <Image Height="16" Width="16"/>
             <Separator/>
-            <TextBlock Name="StatusMessage" />
+            <TextBlock Text="{Binding StatusMessage, Mode=OneWay}" />
             <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Name="StatusCurrentNets" />
+                <TextBlock Text="{Binding NetworkReport, Mode=OneWay}" />
             </StatusBarItem>
         </StatusBar>
-        <Grid Name="ProgressPanel" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Height="24"
-              Visibility="Collapsed">
-            <ProgressBar Name="ProgressBar" Margin="3,3,3,3" />
-            <TextBlock Name="ProgressInfo" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Height="24" Visibility="{Binding TextReporting}">
+            <ProgressBar Margin="3,3,3,3" Maximum="100" Value="{Binding ProgressBar, Mode=OneWay}" />
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressInfo, Mode=OneWay}" />
         </Grid>
-        <TextBox Name="Logs" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" />
+        <Grid>
+            <TextBox BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" Text="{Binding Logs, Mode=OneWay}" />
+            <lvc:CartesianChart Background="White" Visibility="{Binding GraphReporting}">
+                <lvc:CartesianChart.Series>
+                    <lvc:LineSeries Values="{Binding DataValues}" Stroke="#FF5D62D8"></lvc:LineSeries>
+                    <lvc:LineSeries Values="{Binding PredictedValues}" Stroke="#FFD42BD4"></lvc:LineSeries>
+                </lvc:CartesianChart.Series>
+            </lvc:CartesianChart>
+        </Grid>
     </DockPanel>
 </Window>

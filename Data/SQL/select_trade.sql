@@ -1,9 +1,9 @@
 use RahavardNovin3;
 go
 
-declare @ID int = 13;
+declare @ID int = 58;
 declare @Type char(1) = 'T';
-declare @Offset bigint = 2676;
+declare @Offset bigint = 2413;
 
 --create or alter procedure GetTrade  @ID int, @Type char(1), @Offset bigint as
 

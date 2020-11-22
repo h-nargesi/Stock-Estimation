@@ -18,10 +18,13 @@ namespace Photon.Jiringi.Config
         {
             if (path != null) setting_file_name = path;
 
-            using var setting_file = File.Open(setting_file_name, FileMode.OpenOrCreate);
-            var buffer = new byte[setting_file.Length];
-            setting_file.Read(buffer, 0, buffer.Length);
-            try { return JObject.Parse(Encoding.UTF8.GetString(buffer)); }
+            try
+            {
+                using var setting_file = File.Open(setting_file_name, FileMode.OpenOrCreate);
+                var buffer = new byte[setting_file.Length];
+                setting_file.Read(buffer, 0, buffer.Length);
+                return JObject.Parse(Encoding.UTF8.GetString(buffer));
+            }
             catch { return new JObject(); }
         }
         public void Save()
