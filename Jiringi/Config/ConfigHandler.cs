@@ -1,31 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Photon.Jiringi.Config
 {
     public abstract class ConfigHandler
     {
+        private const int waiting = 100;
+        private readonly ReaderWriterLock locker;
         protected readonly JObject setting;
-        public ConfigHandler(JObject setting)
+        public ConfigHandler(JObject setting, ReaderWriterLock locker)
         {
             this.setting = setting ??
+                throw new ArgumentNullException(nameof(setting));
+            this.locker = locker ??
                 throw new ArgumentNullException(nameof(setting));
         }
 
         public JObject GetConfig(string name, object default_value)
         {
-            if (!setting.ContainsKey(name))
+            locker.AcquireReaderLock(waiting);
+            try
             {
-                JObject obj;
-                if (default_value == null) obj = new JObject();
-                else obj = new JObject(default_value);
-                setting.Add(name, obj);
-                return obj;
+                if (!setting.ContainsKey(name))
+                {
+                    JObject obj;
+                    if (default_value == null) obj = new JObject();
+                    else obj = new JObject(default_value);
+                    setting.Add(name, obj);
+                    return obj;
+                }
+                else return setting.Value<JObject>(name);
             }
-            else return setting.Value<JObject>(name);
+            finally { locker.ReleaseReaderLock(waiting); }
         }
         public JObject GetConfig(string name)
         {
@@ -89,5 +101,9 @@ namespace Photon.Jiringi.Config
             else setting[name].Replace(value != null ? JToken.FromObject(value) : null);
         }
 
+        public override string ToString()
+        {
+            return setting.ToString();
+        }
     }
 }

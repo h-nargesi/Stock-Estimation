@@ -170,8 +170,9 @@ namespace Photon.Jiringi
             NetProcess.Log($"Closing");
             if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLine.Count > 0)
                 TrainProcessSerializer.Serialize("temp.nnp", NetProcess);
-            File.AppendAllText("logs", NetProcess.Logs);
             App.Setting.Save();
+
+            File.AppendAllText("logs", App.Logs());
         }
     }
 }

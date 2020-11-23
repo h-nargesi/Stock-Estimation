@@ -19,8 +19,9 @@ namespace Photon.Jiringi.Config
         public readonly string setting_file_name = null;
         private static JObject Read(ref string path)
         {
-            if (string.IsNullOrEmpty(path)) 
+            if (!string.IsNullOrEmpty(path))
                 path = default_setting_file_name;
+            path = Path.GetFullPath(path);
 
             try
             {
@@ -28,12 +29,18 @@ namespace Photon.Jiringi.Config
                 var buffer = new byte[setting_file.Length];
                 setting_file.Read(buffer, 0, buffer.Length);
 
-                return JObject.Parse(Encoding.UTF8.GetString(buffer));
+                var setting_text = Encoding.UTF8.GetString(buffer);
+
+                App.Log("setting loading:", setting_text);
+
+                return JObject.Parse(setting_text);
             }
             catch { return new JObject(); }
         }
         public void Save()
         {
+            App.Log("setting saving:", ToString());
+
             using StreamWriter file = File.CreateText(setting_file_name);
             using JsonTextWriter writer = new JsonTextWriter(file)
             {

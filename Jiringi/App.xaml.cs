@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -14,14 +15,15 @@ namespace Photon.Jiringi
     /// </summary>
     public partial class App : Application
     {
-        private readonly static FileSystemWatcher watcher;
-        public static event EventHandler FileSettingChanged;
+        private readonly static StringBuilder logs;
         public static RootConfigHandler Setting { get; private set; }
+        public static event EventHandler FileSettingChanged;
+        private readonly static FileSystemWatcher watcher;
 
         static App()
         {
-            Setting = new RootConfigHandler($"setting.json");
-
+            logs = new StringBuilder();
+            Setting = new RootConfigHandler();
 
             try
             {
@@ -34,7 +36,7 @@ namespace Photon.Jiringi
                     NotifyFilter = NotifyFilters.LastWrite |
                         NotifyFilters.FileName | NotifyFilters.DirectoryName,
                     // Only watch text files.
-                    Filter = "*.json"
+                    Filter = Path.GetFileName(Path.GetFullPath(Setting.setting_file_name))
                 };
 
                 // Add event handlers.
@@ -45,7 +47,7 @@ namespace Photon.Jiringi
                 // Begin watching.
                 watcher.EnableRaisingEvents = true;
             }
-            catch (Exception) { }
+            catch (Exception ex) { Log("file watcher error", ex.Message); }
         }
         private static void File_Changed(object sender, FileSystemEventArgs e)
         {
@@ -53,5 +55,14 @@ namespace Photon.Jiringi
             FileSettingChanged?.Invoke(Setting, new EventArgs());
         }
 
+        public static void Log(string message, string report = null)
+        {
+            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
+            if (report != null) logs.Append(report).Append("\r\n");
+        }
+        public static string Logs()
+        {
+            return logs.ToString();
+        }
     }
 }

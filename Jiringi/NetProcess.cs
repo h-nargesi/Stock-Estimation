@@ -19,7 +19,6 @@ namespace Photon.Jiringi
     {
         public NetProcess() : base(new DataProvider(App.Setting))
         {
-            logs = new StringBuilder();
             time_reporter = new TimeReporter[3];
 
             DataValues = new ChartValues<ObservableValue>();
@@ -30,29 +29,30 @@ namespace Photon.Jiringi
 
         private void SettingChanged(object sender, EventArgs e)
         {
-            if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible && !Stopped)
-            {
-                PredictedValues.Clear();
-                DataValues.Clear();
-            }
+            if (Stopped) return;
 
             TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
 
             GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+
+            if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible)
+            {
+                PredictedValues.Clear();
+                DataValues.Clear();
+            }
         }
 
 
         #region Status Properties
-        private readonly StringBuilder logs;
 
         public Brush StatusColor { get; private set; } = BLANK;
         public string StatusMessage { get; private set; }
         public string NetworkReport { get; private set; }
         public double ProgressBar { get; private set; }
         public string ProgressInfo { get; private set; }
-        public string Logs => logs.ToString();
+        public string Logs => App.Logs();
         public ChartValues<ObservableValue> DataValues { get; }
         public ChartValues<ObservableValue> PredictedValues { get; }
         public int MaxGraphPoints { get; set; } = DataProviding.DataProvider.RECORDS_PREVIOUS_ONE_YEAR;
@@ -95,19 +95,18 @@ namespace Photon.Jiringi
         public void ChangeStatusWithSave(Brush state, string message)
         {
             ChangeStatus(state, message);
-            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
+            App.Log(message);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
         }
         public void ChangeStatusWithReport(Brush state, string message, string report)
         {
             ChangeStatus(state, message);
-            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
-            logs.Append(DateTime.Now).Append("\r\n").Append(report).Append("\r\n");
+            App.Log(message, report);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
         }
         public void Log(string message)
         {
-            logs.Append(DateTime.Now).Append("\t").Append(message).Append("\r\n");
+            App.Log(message);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
         }
 
