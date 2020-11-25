@@ -7,7 +7,7 @@ namespace Photon.Jiringi.Config
 {
     public class LayersConfigHandler : ConfigHandler
     {
-        public LayersConfigHandler(JObject setting) : base(setting) { }
+        public LayersConfigHandler(ConfigHandler setting) : base(setting) { }
 
         public const string key = "layer";
         private const string nodes_count = "nodes-count";

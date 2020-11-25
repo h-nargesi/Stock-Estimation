@@ -7,7 +7,7 @@ namespace Photon.Jiringi.Config
 {
     public class BrainConfigHandler : ConfigHandler
     {
-        public BrainConfigHandler(JObject setting) : base(setting) { }
+        public BrainConfigHandler(ConfigHandler setting) : base(setting) { }
 
         public const string key = "brain";
         private const string images_path = "images-path";

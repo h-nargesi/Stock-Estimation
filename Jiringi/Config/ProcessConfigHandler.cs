@@ -8,7 +8,7 @@ namespace Photon.Jiringi.Config
 {
     public class ProcessConfigHandler : ConfigHandler
     {
-        public ProcessConfigHandler(JObject setting) : base(setting) { }
+        public ProcessConfigHandler(ConfigHandler setting) : base(setting) { }
 
         public const string key = "process";
         private const string process_stage = "stage";
@@ -49,6 +49,10 @@ namespace Photon.Jiringi.Config
             get { return GetSetting(process_text_reporting, TextReportingDefault); }
             set { SetSetting(process_text_reporting, value); }
         }
+        public string TextReportingPath
+        {
+            get { return $"{CurrentPath}.{process_text_reporting}"; }
+        }
 
         public bool GraphReportingDefault { get; set; } = true;
         public bool GraphReporting
@@ -56,5 +60,10 @@ namespace Photon.Jiringi.Config
             get { return GetSetting(process_graph_reporting, GraphReportingDefault); }
             set { SetSetting(process_graph_reporting, value); }
         }
+        public string GraphReportingPath
+        {
+            get { return $"{CurrentPath}.{process_graph_reporting}"; }
+        }
+
     }
 }

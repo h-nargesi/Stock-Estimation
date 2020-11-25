@@ -13,13 +13,11 @@ namespace Photon.Jiringi.DataProviding
 {
     class DataProvider : IDataProvider, IDisposable
     {
-        public DataProvider(RootConfigHandler setting)
+        public DataProvider()
         {
-            this.setting = setting ?? throw new ArgumentNullException(nameof(setting));
             caches = new Dictionary<int, Cache>();
         }
 
-        private readonly RootConfigHandler setting;
         private int company_step = 0;
         private List<Step> cumulative_frequency_training,
             cumulative_frequency_validation, cumulative_frequency_evaluation;
@@ -39,7 +37,7 @@ namespace Photon.Jiringi.DataProviding
                 caches.Clear();
                 sqlite = new SqlCommand
                 {
-                    Connection = new SqlConnection(setting.DataProvider)
+                    Connection = new SqlConnection(App.Setting.DataProvider)
                 };
                 sqlite.Connection.Open();
 

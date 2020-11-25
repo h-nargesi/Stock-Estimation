@@ -22,7 +22,7 @@
             <MenuItem Header="Training">
                 <MenuItem Header="Instructor" Click="Instruction_Process"></MenuItem>
                 <MenuItem Header="Evaluation" Click="Evaluation_Process"></MenuItem>
-                <MenuItem Header="Stop" Click="Process_Stop"></MenuItem>
+                <MenuItem Header="Stop" Click="Stop_Process"></MenuItem>
             </MenuItem>
         </Menu>
         <StatusBar VerticalAlignment="Bottom" DockPanel.Dock="Bottom"
@@ -39,7 +39,7 @@
             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressInfo, Mode=OneWay}" />
         </Grid>
         <Grid>
-            <TextBox BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" Text="{Binding Logs, Mode=OneWay}" />
+            <TextBox Name="LogBox" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" />
             <lvc:CartesianChart Background="White" Visibility="{Binding GraphReporting}">
                 <lvc:CartesianChart.Series>
                     <lvc:LineSeries Values="{Binding DataValues}" Title="Data"

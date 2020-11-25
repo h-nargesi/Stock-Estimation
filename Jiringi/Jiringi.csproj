@@ -7,9 +7,10 @@
     <AssemblyName>jiringi</AssemblyName>
     <RootNamespace>Photon.Jiringi</RootNamespace>
     <Company>Photon</Company>
-    <Version>2.1.8</Version>
+    <Version>2.2.10</Version>
     <Product>Jiringi</Product>
     <Authors>Hamed Nargesi</Authors>
+    <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -10,44 +11,100 @@ namespace Photon.Jiringi.Config
 {
     public class RootConfigHandler : ConfigHandler
     {
-        public RootConfigHandler(string path = null) : base(Read(ref path))
+        public RootConfigHandler(string path = null) : base(ValidPath(ref path))
         {
-            setting_file_name = path;
+            FileName = path;
+            StartWatching();
         }
 
+        #region File Load and Save
+
         private const string default_setting_file_name = "setting.json";
-        public readonly string setting_file_name = null;
-        private static JObject Read(ref string path)
+        public string FileName { get; }
+        private static string ValidPath(ref string path)
         {
-            if (!string.IsNullOrEmpty(path))
+            if (string.IsNullOrWhiteSpace(path))
                 path = default_setting_file_name;
             path = Path.GetFullPath(path);
-
-            try
-            {
-                using var setting_file = File.Open(path, FileMode.OpenOrCreate);
-                var buffer = new byte[setting_file.Length];
-                setting_file.Read(buffer, 0, buffer.Length);
-
-                var setting_text = Encoding.UTF8.GetString(buffer);
-
-                App.Log("setting loading:", setting_text);
-
-                return JObject.Parse(setting_text);
-            }
-            catch { return new JObject(); }
+            return path;
         }
         public void Save()
         {
-            App.Log("setting saving:", ToString());
+            var start_again = Watching;
+            StopWatching();
 
-            using StreamWriter file = File.CreateText(setting_file_name);
-            using JsonTextWriter writer = new JsonTextWriter(file)
-            {
-                Formatting = Formatting.Indented
-            };
-            setting.WriteTo(writer);
+            WriteTo(FileName);
+            App.Log($"The setting ({Count} node(s)) is saved.");
+            App.LogRecording();
+
+            if (start_again) StartWatching();
         }
+        #endregion
+
+
+        #region File Watcher
+
+        private FileSystemWatcher watcher;
+        public bool Watching
+        {
+            get { lock (FileName) return watcher != null; }
+            set
+            {
+                if (value) StartWatching();
+                else StopWatching();
+            }
+        }
+        private void StartWatching()
+        {
+            lock (FileName)
+            {
+                if (watcher != null) return;
+                try
+                {
+                    // Create a new FileSystemWatcher and set its properties.
+                    watcher = new FileSystemWatcher
+                    {
+                        Path = Path.GetDirectoryName(FileName),
+                        /* Watch for changes in LastAccess and LastWrite times, and 
+                           the renaming of files or directories. */
+                        NotifyFilter = NotifyFilters.LastWrite,
+                        // Only watch text files.
+                        Filter = Path.GetFileName(FileName)
+                    };
+
+                    // Add event handlers.
+                    watcher.Changed += new FileSystemEventHandler(File_Changed);
+
+                    // Begin watching.
+                    watcher.EnableRaisingEvents = true;
+                }
+                catch (Exception ex) { App.Log("file watcher error", ex.Message); }
+            }
+        }
+        private void StopWatching()
+        {
+            lock (FileName)
+            {
+                if (watcher == null) return;
+
+                watcher.EnableRaisingEvents = false;
+
+                watcher.Dispose();
+                watcher = null;
+            }
+        }
+        private void File_Changed(object sender, FileSystemEventArgs e)
+        {
+            if (e.FullPath != FileName) return;
+            Thread.Sleep(100); // sure file is closed by other editor
+            LoadFrom(FileName, (log_message) =>
+            {
+                brain_instance = null;
+                process = null;
+                App.Log($"{log_message} ({e.ChangeType})");
+            });
+        }
+        #endregion
 
 
         private const string data_provider = "data-provider";

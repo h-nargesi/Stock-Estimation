@@ -17,30 +17,36 @@ namespace Photon.Jiringi
 {
     public class NetProcess : Instructor, INotifyPropertyChanged
     {
-        public NetProcess() : base(new DataProvider(App.Setting))
+        public NetProcess() : base(new DataProvider())
         {
             time_reporter = new TimeReporter[3];
 
             DataValues = new ChartValues<ObservableValue>();
             PredictedValues = new ChartValues<ObservableValue>();
 
-            App.FileSettingChanged += SettingChanged;
+            App.Setting.Changed += Setting_Changed;
         }
 
-        private void SettingChanged(object sender, EventArgs e)
+        private void Setting_Changed(object sender, Config.ConfigChangedEventArg e)
         {
             if (Stopped) return;
 
-            TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
-
-            GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
-
-            if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible)
+            if (TextReporting != (App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed))
             {
-                PredictedValues.Clear();
-                DataValues.Clear();
+                TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+            }
+
+            if (GraphReporting != (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
+            {
+                GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+
+                if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible)
+                {
+                    PredictedValues.Clear();
+                    DataValues.Clear();
+                }
             }
         }
 
@@ -52,7 +58,6 @@ namespace Photon.Jiringi
         public string NetworkReport { get; private set; }
         public double ProgressBar { get; private set; }
         public string ProgressInfo { get; private set; }
-        public string Logs => App.Logs();
         public ChartValues<ObservableValue> DataValues { get; }
         public ChartValues<ObservableValue> PredictedValues { get; }
         public int MaxGraphPoints { get; set; } = DataProviding.DataProvider.RECORDS_PREVIOUS_ONE_YEAR;
@@ -85,29 +90,22 @@ namespace Photon.Jiringi
             NetworkReport = cur_proc;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NetworkReport)));
         }
-        public void ChangeStatus(Brush state, string message)
+        private void ChangeStatus(Brush state, string message)
         {
             StatusColor = state;
             StatusMessage = message;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusColor)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusMessage)));
         }
-        public void ChangeStatusWithSave(Brush state, string message)
+        public void ChangeStatusWithLog(Brush state, string message)
         {
             ChangeStatus(state, message);
             App.Log(message);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
         }
-        public void ChangeStatusWithReport(Brush state, string message, string report)
+        public void ChangeStatusWithLog(Brush state, string message, string report)
         {
             ChangeStatus(state, message);
             App.Log(message, report);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
-        }
-        public void Log(string message)
-        {
-            App.Log(message);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Logs)));
         }
 
         public static readonly SolidColorBrush
@@ -128,7 +126,7 @@ namespace Photon.Jiringi
 
         protected override void OnInitialize()
         {
-            Log("Process initializing");
+            App.Log("Process initializing");
 
             // reset stage
             var stage = App.Setting.Process.Stage;
@@ -175,8 +173,8 @@ namespace Photon.Jiringi
             if (last_instrument_id != current_instrument_id)
             {
                 if (last_instrument_id > -1)
-                    Log($"End Section:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
-                Log($"Start Section:\tinstrument-id({current_instrument_id})\toffset({current_offset})\trecord({current_record_offset})");
+                    App.Log($"End Section:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
+                App.Log($"Start Section:\tinstrument-id({current_instrument_id})\toffset({current_offset})\trecord({current_record_offset})");
             }
             last_instrument_id = current_instrument_id;
             last_offset = current_offset;
@@ -268,7 +266,7 @@ namespace Photon.Jiringi
         }
         protected override void OnStopped()
         {
-            Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
+            App.Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
             last_instrument_id = -1;
 
             TextReporting = Visibility.Collapsed;
@@ -276,7 +274,7 @@ namespace Photon.Jiringi
         }
         protected override void OnError(Exception ex)
         {
-            ChangeStatusWithReport(ERROR, ex.Message, ex.StackTrace);
+            ChangeStatusWithLog(ERROR, ex.Message, ex.StackTrace);
 
             TextReporting = Visibility.Collapsed;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
