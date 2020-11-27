@@ -367,5 +367,9 @@ from Trade where InstrumentID = @InstrumentID
 order by DateTimeEn desc offset @Offset rows fetch first @Count rows only";
         #endregion
 
+        public string PrintInfo()
+        {
+            return $"[data provider]\nconnection state: {sqlite?.Connection?.State}\nconnection string: {sqlite?.Connection?.ConnectionString}";
+        }
     }
 }

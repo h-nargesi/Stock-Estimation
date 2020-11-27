@@ -1,5 +1,4 @@
-﻿using Photon.Jiringi.Config;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -7,6 +6,9 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Photon.Jiringi.Config;
+using Photon.Jiringi.NetSpecifics;
+using Photon.NeuralNetwork.Chista.Implement;
 
 namespace Photon.Jiringi
 {
@@ -21,6 +23,9 @@ namespace Photon.Jiringi
         {
             logs = new StringBuilder();
             Setting = new RootConfigHandler();
+
+            new DataAngle().Register();
+            new ErrorStack(0).Register();
         }
 
 

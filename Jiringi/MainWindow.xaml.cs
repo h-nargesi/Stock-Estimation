@@ -23,6 +23,7 @@ using Photon.NeuralNetwork.Chista.Serializer;
 using Photon.NeuralNetwork.Chista.Trainer;
 using LiveCharts;
 using LiveCharts.Wpf;
+using Photon.Jiringi.NetSpecifics;
 
 namespace Photon.Jiringi
 {
@@ -132,7 +133,7 @@ namespace Photon.Jiringi
                         .Image();
 
                 // reset all values
-                NetProcess.LoadProgress(new ProcessInfo
+                NetProcess.LoadProgress(new InstructorProcessInfo
                 {
                     Epoch = 0,
                     Offset = 0,
@@ -149,6 +150,7 @@ namespace Photon.Jiringi
                     });
 
                 NetProcess.Networks_Report();
+                App.Log(NetProcess.PrintInfo());
                 NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The neural networks created.");
             }
             catch (Exception ex)
@@ -175,10 +177,37 @@ namespace Photon.Jiringi
 
                 switch (file)
                 {
-                    case ProcessInfo process_info:
+                    case InstructorProcessInfo inst_process_info:
+
+                        for (var p = 0; p <= inst_process_info.Processes.Count; p++)
+                        {
+                            var image = inst_process_info.Processes[p].Brain.Image();
+                            if (image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack dep)
+                            {
+                                var prc_info = inst_process_info.Processes[p].ProgressInfo();
+                                prc_info.best_image = new NeuralNetworkImage(
+                                    image.layers, new ErrorStack(dep.IndexCount),
+                                    image.input_convertor, image.output_convertor, image.regularization);
+                                inst_process_info.Processes[p] = prc_info.TrainProcess();
+                            }
+                        }
+                        for (var o = 0; o <= inst_process_info.OutOfLine.Count; o++)
+                        {
+                            var image = inst_process_info.OutOfLine[o].image;
+                            if (image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack dep)
+                            {
+                                var new_image = new NeuralNetworkImage(
+                                    image.layers, new ErrorStack(dep.IndexCount),
+                                    image.input_convertor, image.output_convertor, image.regularization);
+                                inst_process_info.OutOfLine[o] = new BrainInfo(
+                                    new_image, inst_process_info.OutOfLine[o].Accuracy);
+                            }
+                        }
+
                         Stop_Process();
-                        NetProcess.LoadProgress(process_info);
+                        NetProcess.LoadProgress(inst_process_info);
                         NetProcess.Networks_Report();
+                        App.Log(NetProcess.PrintInfo());
                         break;
 
                     default:
