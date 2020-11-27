@@ -13,7 +13,7 @@ namespace Photon.Jiringi.DataCaching
             overflow_checker = checker ?? throw new ArgumentNullException(nameof(checker));
         }
 
-        private readonly ReverseLinkedListEnumerable<T> reverse_enumerator;
+        protected readonly ReverseLinkedListEnumerable<T> reverse_enumerator;
         protected readonly IOverFlowCheck<T> overflow_checker;
         protected readonly LinkedList<T> cache;
 

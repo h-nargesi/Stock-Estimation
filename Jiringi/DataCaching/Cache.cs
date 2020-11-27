@@ -85,7 +85,7 @@ namespace Photon.Jiringi.DataCaching
         public static Cache Build(int result_count, int this_year_signal_count, int years_count, int one_year_records_cout)
         {
             var builder = new CacheBuilder<StockTradeData>()
-                .AddCacherArray(new StockDataSizeChecker(result_count))
+                .AddCacher(new CacherRadian(new StockDataSizeChecker(result_count)))
                 .AddCacherArray(new StockDataSizeYearChecker(this_year_signal_count, 1))
                 .AddCacherGap(new StockDataYearChecker(1))
                 .AddCacherArray(new StockDataSizeYearChecker(one_year_records_cout, 2));

@@ -34,11 +34,6 @@ namespace Photon.Jiringi.DataCaching
         }
         public override void FillBuffer(double[] buffer, ref int index)
         {
-            if (overflow_checker.MaxLength == 2)
-            {
-
-            }
-
             if (cache.Count > 0)
                 buffer[index] = current_sum / cache.Count;
             index++;

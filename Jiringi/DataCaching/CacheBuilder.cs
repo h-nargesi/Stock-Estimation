@@ -8,6 +8,11 @@ namespace Photon.Jiringi.DataCaching
     {
         private readonly List<ICache<T>> caches = new List<ICache<T>>();
 
+        public CacheBuilder<T> AddCacher(Cacher<T> cacher)
+        {
+            caches.Add(cacher);
+            return this;
+        }
         public CacheBuilder<T> AddCacherArray(IOverFlowCheck<T> checker)
         {
             caches.Add(new CacherArray<T>(checker));
