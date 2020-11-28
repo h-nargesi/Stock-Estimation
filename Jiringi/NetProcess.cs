@@ -181,13 +181,13 @@ namespace Photon.Jiringi
             last_offset = current_offset;
             last_record_offset = current_record_offset;
 
+            var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
+            duration = time_reporter[1].GetNextAvg(duration);
+            var offset_interval = time_reporter[2].GetNextAvg();
+
             if (DateTime.Now.Ticks - last_time_text_reported > report_time_interval)
                 if (TextReporting == Visibility.Visible)
                 {
-                    var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
-                    duration = time_reporter[1].GetNextAvg(duration);
-                    var offset_interval = time_reporter[2].GetNextAvg();
-
                     Task.Run(() =>
                     {
                         uint done_count;
