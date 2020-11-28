@@ -34,20 +34,24 @@ namespace Photon.Jiringi
 
             if (TextReporting != (App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed))
             {
+                time_reporter[0].Clear();
+                time_reporter[1].Clear();
+                time_reporter[2].Clear();
+
                 TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
             }
 
             if (GraphReporting != (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
             {
-                GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
-
-                if (App.Setting.Process.GraphReporting && GraphReporting != Visibility.Visible)
+                if (App.Setting.Process.GraphReporting)
                 {
                     PredictedValues.Clear();
                     DataValues.Clear();
                 }
+
+                GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
             }
         }
 
@@ -124,6 +128,7 @@ namespace Photon.Jiringi
         private int last_instrument_id = -1;
         private uint last_offset = 0, last_record_offset = 0;
         private readonly TimeReporter[] time_reporter;
+        private BasicalMethodsTypes method_type = 0;
 
         protected override void OnInitialize()
         {
@@ -166,6 +171,8 @@ namespace Photon.Jiringi
 
             GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+
+            method_type = ((DataProvider)DataProvider).Method;
         }
         protected override void ReflectFinished(Record record, long duration, int running_code)
         {
@@ -181,12 +188,13 @@ namespace Photon.Jiringi
             last_offset = current_offset;
             last_record_offset = current_record_offset;
 
-            var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
-            duration = time_reporter[1].GetNextAvg(duration);
-            var offset_interval = time_reporter[2].GetNextAvg();
+            if (TextReporting == Visibility.Visible)
+            {
+                var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
+                duration = time_reporter[1].GetNextAvg(duration);
+                var offset_interval = time_reporter[2].GetNextAvg();
 
-            if (DateTime.Now.Ticks - last_time_text_reported > report_time_interval)
-                if (TextReporting == Visibility.Visible)
+                if (DateTime.Now.Ticks - last_time_text_reported > report_time_interval)
                 {
                     Task.Run(() =>
                     {
@@ -214,9 +222,9 @@ namespace Photon.Jiringi
 
                         ProgressBar = Offset * 100D / done_count;
                         ProgressInfo =
-    @$"#{Epoch} {Stage} {PrintUnsign(ProgressBar, 3):R}% ID({current_instrument_id})";
+@$"#{Epoch} {Stage} {PrintUnsign(ProgressBar, 3):R}% ID({current_instrument_id})";
                         string message =
-    @$"Data loading={GetDurationString(record_duration, 6)} Prediction={GetDurationString(duration, 6)} Left time={GetDurationString(offset_interval * remain_count, 3)}";
+@$"Data loading={GetDurationString(record_duration, 6)} Prediction={GetDurationString(duration, 6)} Left time={GetDurationString(offset_interval * remain_count, 3)}";
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressBar)));
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressInfo)));
 
@@ -226,11 +234,12 @@ namespace Photon.Jiringi
 
                     last_time_text_reported = DateTime.Now.Ticks;
                 }
+            }
 
 
             if (GraphReporting == Visibility.Visible)
             {
-                double accuracy = 0; double data_delta = 0;
+                double accuracy = 0; double data_delta = 0; int best = -1;
                 if (running_code == (int)TraingingStages.Evaluation)
                 {
                     for (var i = 0; i < OutOfLine.Count; i++)
@@ -238,6 +247,7 @@ namespace Photon.Jiringi
                         {
                             accuracy = OutOfLine[i].Accuracy;
                             data_delta = OutOfLine[i].LastPrediction.ResultSignals[0];
+                            best = i;
                         }
                 }
                 else
@@ -247,12 +257,37 @@ namespace Photon.Jiringi
                         {
                             accuracy = Processes[i].CurrentAccuracy;
                             data_delta = Processes[i].LastPredict.ResultSignals[0];
+                            best = i;
                         }
                 }
 
-                var result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
-                var data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
-                var data_price = result_price * (data_factor / result_factor);
+                double data_price, result_factor, data_factor;
+                switch (method_type)
+                {
+                    case BasicalMethodsTypes.ChangeBased:
+                        data_factor = result_factor = 1;
+                        if (running_code == (int)TraingingStages.Evaluation)
+                            for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
+                            {
+                                result_factor *= 1 + record.result[i];
+                                data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i];
+                            }
+                        else
+                            for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
+                            {
+                                result_factor *= 1 + record.result[i];
+                                data_factor *= 1 + Processes[best].LastPredict.ResultSignals[i];
+                            }
+                        data_price = result_price * (data_factor / result_factor);
+                        break;
+                    case BasicalMethodsTypes.AngleBased:
+                        result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
+                        data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
+                        data_price = result_price * (data_factor / result_factor);
+                        break;
+                    default: data_price = 0; break;
+                }
+
 
                 DataValues.Add(new ObservableValue(result_price));
                 PredictedValues.Add(new ObservableValue(data_price));
@@ -260,11 +295,14 @@ namespace Photon.Jiringi
                 while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
                 while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
 
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+                Task.Run(()=>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+                });
 
                 // let the ui to change
-                Thread.Sleep(200);
+                Thread.Sleep(400);
             }
         }
         protected override void OnFinished()

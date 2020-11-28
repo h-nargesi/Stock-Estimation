@@ -15,7 +15,7 @@ namespace Photon.Jiringi.Config
         private const string learning_factor = "learning-factor";
         private const string certainty_factor = "certainty-factor";
         private const string dropout_factor = "dropout-factor";
-        private const string rebuild = "rebuild";
+        private const string basical_method = "basical-method";
 
         public string ImagesPathDefault { get; set; } = "";
         public string ImagesPath
@@ -61,6 +61,17 @@ namespace Photon.Jiringi.Config
                     layer_instance = new LayersConfigHandler(GetConfig(LayersConfigHandler.key, null));
                 return layer_instance;
             }
+        }
+
+        public BasicalMethodsTypes BasicalMethodDefault { get; set; } = BasicalMethodsTypes.AngleBased;
+        public BasicalMethodsTypes BasicalMethod
+        {
+            get
+            {
+                var str = GetSetting(basical_method, BasicalMethodDefault.ToString());
+                return (BasicalMethodsTypes)Enum.Parse(typeof(BasicalMethodsTypes), str);
+            }
+            set { SetSetting(basical_method, value.ToString()); }
         }
 
     }

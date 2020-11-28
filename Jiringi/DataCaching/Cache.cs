@@ -82,7 +82,22 @@ namespace Photon.Jiringi.DataCaching
             caches.CheckOffsetSequence(ref previous_offset);
         }
 
-        public static Cache Build(int result_count, int this_year_signal_count, int years_count, int one_year_records_cout)
+        public static Cache Build_ChangeBased(int result_count, int this_year_signal_count, int years_count, int one_year_records_cout)
+        {
+            var builder = new CacheBuilder<StockTradeData>()
+                .AddCacherArray(new StockDataSizeChecker(result_count))
+                .AddCacherArray(new StockDataSizeYearChecker(this_year_signal_count, 1))
+                .AddCacherGap(new StockDataYearChecker(1))
+                .AddCacherArray(new StockDataSizeYearChecker(one_year_records_cout, 2));
+
+            for (int i = 2; i <= years_count; i++)
+                builder
+                    .AddCacherGap(new StockDataYearChecker(i))
+                    .AddCacherAvragtorCollection(one_year_records_cout / i, new StockDataSizeYearChecker(i, i + 1));
+
+            return new Cache((CacheCollection<StockTradeData>)builder.CacheCollection());
+        }
+        public static Cache Build_AngleBased(int result_count, int this_year_signal_count, int years_count, int one_year_records_cout)
         {
             var builder = new CacheBuilder<StockTradeData>()
                 .AddCacher(new CacherRadian(new StockDataSizeChecker(result_count)))

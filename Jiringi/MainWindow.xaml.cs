@@ -116,8 +116,10 @@ namespace Photon.Jiringi
                 }
 
                 var images = new NeuralNetworkImage[App.Setting.Brain.ImagesCount];
-                var conduction = App.Setting.Brain.Layers.Conduction == "soft-relu" ?
+                var conduction = App.Setting.Brain.Layers.Conduction.ToLower() == "soft-relu" ?
                     (IConduction)new SoftReLU() : new ReLU();
+                var out_data_range = App.Setting.Brain.BasicalMethod == BasicalMethodsTypes.AngleBased ?
+                    (IDataConvertor)new DataRangeDouble(Math.PI / 2, 0) : new DataRange(5, 0);
 
                 for (int i = 0; i < images.Length; i++)
                     images[i] = new NeuralNetworkInitializer()
@@ -135,6 +137,7 @@ namespace Photon.Jiringi
                     Offset = 0,
                     Stage = TraingingStages.Training,
                 });
+                ((DataProvider)NetProcess.DataProvider).Method = App.Setting.Brain.BasicalMethod;
 
                 // add new processes
                 foreach (var image in images)
@@ -169,7 +172,18 @@ namespace Photon.Jiringi
             try
             {
                 NetProcess.ChangeStatusWithLog(NetProcess.INFO, "Loading neural network process ...");
-                var file = GeneralFileRestore.Restore(openning.FileName);
+                var file = GeneralFileRestore.Restore(openning.FileName, out string method);
+
+                BasicalMethodsTypes method_type;
+                try
+                {
+                    method_type = (BasicalMethodsTypes)Enum.Parse(typeof(BasicalMethodsTypes), method);
+                }
+                catch (Exception ex)
+                {
+                    App.Log(ex.Message, ex.StackTrace);
+                    method_type = BasicalMethodsTypes.ChangeBased;
+                }
 
                 switch (file)
                 {
@@ -203,6 +217,7 @@ namespace Photon.Jiringi
                         Stop_Process();
                         NetProcess.LoadProgress(inst_process_info);
                         NetProcess.Networks_Report();
+                        ((DataProvider)NetProcess.DataProvider).Method = method_type;
                         App.Log(NetProcess.PrintInfo());
                         break;
 
@@ -233,7 +248,8 @@ namespace Photon.Jiringi
             try
             {
                 NetProcess.ChangeStatusWithLog(NetProcess.INFO, "Saving neural network instructor ...");
-                TrainProcessSerializer.Serialize(saving.FileName, NetProcess);
+                TrainProcessSerializer.Serialize(saving.FileName, NetProcess,
+                    ((DataProvider)NetProcess.DataProvider).Method.ToString());
                 NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The data saved.");
             }
             catch (Exception ex)
@@ -265,7 +281,8 @@ namespace Photon.Jiringi
 
             App.Log($"Closing");
             if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLine.Count > 0)
-                TrainProcessSerializer.Serialize("temp.nnp", NetProcess);
+                TrainProcessSerializer.Serialize("temp.nnp", NetProcess,
+                    ((DataProvider)NetProcess.DataProvider).Method.ToString());
 
             App.Setting.Watching = false;
             App.Setting.Save();

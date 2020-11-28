@@ -39,5 +39,10 @@ namespace Photon.Jiringi.DataProviding
 
             return GetNextAvg(value);
         }
+
+        public void Clear()
+        {
+            history.Clear();
+        }
     }
 }

@@ -29,6 +29,7 @@ namespace Photon.Jiringi.DataProviding
         public uint ValidationCount { get; private set; }
         public uint EvaluationCount { get; private set; }
         public double FirstPrice { get; private set; }
+        public BasicalMethodsTypes Method { get; set; } = 0;
 
         public void Initialize()
         {
@@ -87,8 +88,16 @@ namespace Photon.Jiringi.DataProviding
                     if (!is_inserted) continue;
 
                     if (!caches.ContainsKey(instrument_id))
-                        caches.Add(instrument_id, Cache.Build(
-                            RESULT_COUNT, RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
+                        switch (Method)
+                        {
+                            case BasicalMethodsTypes.AngleBased:
+                                caches.Add(instrument_id, Cache.Build_AngleBased(RESULT_COUNT, RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
+                                break;
+                            case BasicalMethodsTypes.ChangeBased:
+                                caches.Add(instrument_id, Cache.Build_ChangeBased(RESULT_COUNT, RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
+                                break;
+                            default:throw new Exception("Invalid basical method");
+                        }
                 }
 
                 /*if (cumulative_frequency_training.Count == 0)
