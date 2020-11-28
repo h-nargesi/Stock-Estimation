@@ -116,20 +116,16 @@ namespace Photon.Jiringi
                 }
 
                 var images = new NeuralNetworkImage[App.Setting.Brain.ImagesCount];
-
                 var conduction = App.Setting.Brain.Layers.Conduction == "soft-relu" ?
                     (IConduction)new SoftReLU() : new ReLU();
-                var output = App.Setting.Brain.Layers.OutputConduction == "straight" ?
-                    (IConduction)new Straight() : new Sigmoind();
-                var range = App.Setting.Brain.Layers.OutputConduction == "straight" ? null : new DataRange(20, 10);
 
                 for (int i = 0; i < images.Length; i++)
                     images[i] = new NeuralNetworkInitializer()
                         .SetInputSize(DataProvider.SIGNAL_COUNT)
                         .AddLayer(conduction, layers)
-                        .AddLayer(output, DataProvider.RESULT_COUNT)
+                        .AddLayer(new Sigmoind(), DataProvider.RESULT_COUNT)
                         .SetCorrection(new ErrorStack(DataProvider.RESULT_COUNT), new RegularizationL2())
-                        .SetDataConvertor(new DataRange(5, 0), range)
+                        .SetDataConvertor(new DataRange(5, 0), new DataRangeDouble(Math.PI / 2, 0))
                         .Image();
 
                 // reset all values
@@ -179,7 +175,7 @@ namespace Photon.Jiringi
                 {
                     case InstructorProcessInfo inst_process_info:
 
-                        for (var p = 0; p <= inst_process_info.Processes.Count; p++)
+                        for (var p = 0; p < inst_process_info.Processes.Count; p++)
                         {
                             var image = inst_process_info.Processes[p].Brain.Image();
                             if (image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack dep)
@@ -191,7 +187,7 @@ namespace Photon.Jiringi
                                 inst_process_info.Processes[p] = prc_info.TrainProcess();
                             }
                         }
-                        for (var o = 0; o <= inst_process_info.OutOfLine.Count; o++)
+                        for (var o = 0; o < inst_process_info.OutOfLine.Count; o++)
                         {
                             var image = inst_process_info.OutOfLine[o].image;
                             if (image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack dep)
@@ -252,7 +248,16 @@ namespace Photon.Jiringi
 
         private void App_LogChanged(object sender, EventArgs e)
         {
-            Dispatcher.Invoke(() => LogBox.AppendText(App.UnseenLogs()));
+            Dispatcher.Invoke(() =>
+            {
+                LogBox.AppendText(App.UnseenLogs());
+                if (LogBox.Visibility == Visibility.Visible)
+                {
+                    LogBox.Focus();
+                    LogBox.CaretIndex = LogBox.Text.Length;
+                    LogBox.ScrollToEnd();
+                }
+            });
         }
         private void Window_Closing(object sender, CancelEventArgs e)
         {

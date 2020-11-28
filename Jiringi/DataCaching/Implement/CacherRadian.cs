@@ -12,28 +12,27 @@ namespace Photon.Jiringi.DataCaching
             else OutputCount = (uint)overflow_checker.MaxLength;
         }
 
-        private const double PI2 = Math.PI / 2;
+        public const double K = 0.05;
         public override uint OutputCount { get; }
 
         public override void FillBuffer(double[] buffer, ref int index)
         {
-            var start_index = index;
-            if (cache.Count > 0)
+            index += overflow_checker.MaxLength;
+            if (cache.Count < 1) return;
+
+            double factor = 1;
+            int i = index;
+            foreach (var val in reverse_enumerator)
             {
-                double factor = 1;
-                index += overflow_checker.MaxLength;
-                foreach (var val in reverse_enumerator)
-                {
-                    index--;
-                    // factor based on orginal point
-                    factor *= 1 + val.Value;
-                    // the tangent of angle finding
-                    buffer[index] = factor / (overflow_checker.MaxLength - index);
-                    // the angle (radian) finding
-                    buffer[index] = (Math.Atan(buffer[index]) + PI2) / Math.PI;
-                }
+                i--;
+                // cumulative factor
+                factor *= 1 + val.Change / 100D;
+                // price changes from base price
+                // scaled price changes
+                buffer[i] = (factor - 1) / K;
+                // convert price chnages to angle changes
+                buffer[i] = Math.Atan(buffer[i]);
             }
-            index = start_index + overflow_checker.MaxLength;
         }
 
         public static CacherRadian[] CreateMulti(int count, IOverFlowCheck<StockTradeData> checker)

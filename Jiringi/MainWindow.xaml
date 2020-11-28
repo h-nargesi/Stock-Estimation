@@ -39,7 +39,8 @@
             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressInfo, Mode=OneWay}" />
         </Grid>
         <Grid>
-            <TextBox Name="LogBox" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" />
+            <TextBox Name="LogBox" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" 
+                     VerticalScrollBarVisibility="Auto" />
             <lvc:CartesianChart Background="White" Visibility="{Binding GraphReporting}">
                 <lvc:CartesianChart.Series>
                     <lvc:LineSeries Values="{Binding DataValues}" Title="Data"

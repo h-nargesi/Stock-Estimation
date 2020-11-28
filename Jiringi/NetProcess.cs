@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Media;
 using LiveCharts;
 using LiveCharts.Defaults;
+using Photon.Jiringi.DataCaching;
 using Photon.Jiringi.DataProviding;
 using Photon.NeuralNetwork.Chista;
 using Photon.NeuralNetwork.Chista.Trainer;
@@ -168,8 +169,8 @@ namespace Photon.Jiringi
         }
         protected override void ReflectFinished(Record record, long duration, int running_code)
         {
-            var (current_instrument_id, current_offset, current_record_offset) =
-                (ValueTuple<int, uint, uint>)record.extra;
+            var (current_instrument_id, current_offset, current_record_offset, result_price) =
+                (ValueTuple<int, uint, uint, double>)record.extra;
             if (last_instrument_id != current_instrument_id)
             {
                 if (last_instrument_id > -1)
@@ -229,40 +230,45 @@ namespace Photon.Jiringi
 
             if (GraphReporting == Visibility.Visible)
             {
-                Task.Run(() =>
+                double accuracy = 0; double data_delta = 0;
+                if (running_code == (int)TraingingStages.Evaluation)
                 {
-                    double accuracy = 0; double best = 0;
-                    if (running_code == (int)TraingingStages.Evaluation)
-                    {
-                        for (var i = 0; i < OutOfLine.Count; i++)
-                            if (accuracy < OutOfLine[i].Accuracy)
-                            {
-                                accuracy = OutOfLine[i].Accuracy;
-                                best = OutOfLine[i].LastPrediction.ResultSignals[0];
-                            }
-                    }
-                    else
-                    {
-                        for (var i = 0; i < Processes.Count; i++)
-                            if (accuracy < Processes[i].CurrentAccuracy)
-                            {
-                                accuracy = Processes[i].CurrentAccuracy;
-                                best = Processes[i].LastPredict.ResultSignals[0];
-                            }
-                    }
+                    for (var i = 0; i < OutOfLine.Count; i++)
+                        if (accuracy < OutOfLine[i].Accuracy)
+                        {
+                            accuracy = OutOfLine[i].Accuracy;
+                            data_delta = OutOfLine[i].LastPrediction.ResultSignals[0];
+                        }
+                }
+                else
+                {
+                    for (var i = 0; i < Processes.Count; i++)
+                        if (accuracy < Processes[i].CurrentAccuracy)
+                        {
+                            accuracy = Processes[i].CurrentAccuracy;
+                            data_delta = Processes[i].LastPredict.ResultSignals[0];
+                        }
+                }
 
-                    DataValues.Add(new ObservableValue(record.result[0]));
-                    PredictedValues.Add(new ObservableValue(best));
+                var result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
+                var data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
+                var data_price = result_price * (data_factor / result_factor);
 
-                    while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
-                    while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
+                DataValues.Add(new ObservableValue(result_price));
+                PredictedValues.Add(new ObservableValue(data_price));
 
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
-                });
+                while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
+                while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
 
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+
+                // let the ui to change
                 Thread.Sleep(200);
             }
+        }
+        protected override void OnFinished()
+        {
         }
         protected override void OnStopped()
         {

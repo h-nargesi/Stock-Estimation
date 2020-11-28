@@ -208,9 +208,9 @@ namespace Photon.Jiringi.Config
         }
         public override string ToString()
         {
-            locker.AcquireWriterLock(-1);
+            locker.AcquireReaderLock(-1);
             try { return setting.ToString(); }
-            finally { locker.ReleaseWriterLock(); }
+            finally { locker.ReleaseReaderLock(); }
         }
 
         private class ConfigHandlerPack : ConfigHandler

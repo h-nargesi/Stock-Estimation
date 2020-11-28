@@ -26,12 +26,5 @@ namespace Photon.Jiringi.Config
             get { return GetSetting(model_conduction, ConductionDefault); }
             set { SetSetting(model_conduction, value); }
         }
-
-        public string OutputConductionDefault { get; set; } = "sigmoind";
-        public string OutputConduction
-        {
-            get { return GetSetting(model_output, OutputConductionDefault); }
-            set { SetSetting(model_output, value); }
-        }
     }
 }

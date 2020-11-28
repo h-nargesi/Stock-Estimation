@@ -170,7 +170,7 @@ namespace Photon.Jiringi.DataProviding
 #endif
 
                 return new Record(signal, result, DateTime.Now.Ticks - start_time,
-                    (instrument_id, offset, record_offset));
+                    (instrument_id, offset, record_offset, (double)cache.FirstValue.Value.Price));
             });
         }
         private (int id, uint rec_offset) FindCompany(List<Step> cumulative_frequency, uint offset)

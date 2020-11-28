@@ -24,7 +24,6 @@ namespace Photon.Jiringi
             logs = new StringBuilder();
             Setting = new RootConfigHandler();
 
-            new DataAngle().Register();
             new ErrorStack(0).Register();
         }
 
