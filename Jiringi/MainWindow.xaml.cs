@@ -119,7 +119,7 @@ namespace Photon.Jiringi
                 var conduction = App.Setting.Brain.Layers.Conduction.ToLower() == "soft-relu" ?
                     (IConduction)new SoftReLU() : new ReLU();
                 var out_data_range = App.Setting.Brain.BasicalMethod == BasicalMethodsTypes.AngleBased ?
-                    (IDataConvertor)new DataRangeDouble(Math.PI / 2, 0) : new DataRange(5, 0);
+                    (IDataConvertor)new DataRangeDouble(Math.PI / 2, 0) : new DataRange(20, 0);
 
                 for (int i = 0; i < images.Length; i++)
                     images[i] = new NeuralNetworkInitializer()
@@ -127,7 +127,7 @@ namespace Photon.Jiringi
                         .AddLayer(conduction, layers)
                         .AddLayer(new Sigmoind(), DataProvider.RESULT_COUNT)
                         .SetCorrection(new ErrorStack(DataProvider.RESULT_COUNT), new RegularizationL2())
-                        .SetDataConvertor(new DataRange(5, 0), new DataRangeDouble(Math.PI / 2, 0))
+                        .SetDataConvertor(new DataRange(5, 0), out_data_range)
                         .Image();
 
                 // reset all values
@@ -216,8 +216,8 @@ namespace Photon.Jiringi
 
                         Stop_Process();
                         NetProcess.LoadProgress(inst_process_info);
-                        NetProcess.Networks_Report();
                         ((DataProvider)NetProcess.DataProvider).Method = method_type;
+                        NetProcess.Networks_Report();
                         App.Log(NetProcess.PrintInfo());
                         break;
 
@@ -263,7 +263,11 @@ namespace Photon.Jiringi
         }
         private void MenuItem_PrintInfo(object sender, RoutedEventArgs e)
         {
-            try { NetProcess.Networks_Report(); }
+            try
+            {
+                NetProcess.Networks_Report();
+                App.Log(NetProcess.PrintInfo());
+            }
             catch (Exception ex)
             {
                 NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);

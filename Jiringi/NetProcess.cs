@@ -279,15 +279,16 @@ namespace Photon.Jiringi
                                 data_factor *= 1 + Processes[best].LastPredict.ResultSignals[i] / 100D;
                             }
                         data_price = result_price * (data_factor / result_factor);
+                        result_price = result_price * ((1 + record.result[^1] / 100D) / result_factor);
                         break;
                     case BasicalMethodsTypes.AngleBased:
                         result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
                         data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
                         data_price = result_price * (data_factor / result_factor);
+                        result_price = result_price * ((1 + CacherRadian.K * Math.Tan(record.result[^1])) / result_factor);
                         break;
                     default: data_price = 0; break;
                 }
-
 
                 DataValues.Add(new ObservableValue(result_price));
                 PredictedValues.Add(new ObservableValue(data_price));
@@ -302,7 +303,7 @@ namespace Photon.Jiringi
                 });
 
                 // let the ui to change
-                Thread.Sleep(400);
+                Thread.Sleep(850);
             }
         }
         protected override void OnFinished()
