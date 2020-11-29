@@ -7,7 +7,7 @@
     <AssemblyName>jiringi</AssemblyName>
     <RootNamespace>Photon.Jiringi</RootNamespace>
     <Company>Photon</Company>
-    <Version>3.1.13</Version>
+    <Version>3.2.14</Version>
     <Product>Jiringi</Product>
     <Authors>Hamed Nargesi</Authors>
     <ApplicationIcon>favicon.ico</ApplicationIcon>

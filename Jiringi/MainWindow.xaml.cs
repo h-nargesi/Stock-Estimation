@@ -261,6 +261,14 @@ namespace Photon.Jiringi
                 App.Setting.Save();
             }
         }
+        private void MenuItem_PrintInfo(object sender, RoutedEventArgs e)
+        {
+            try { NetProcess.Networks_Report(); }
+            catch (Exception ex)
+            {
+                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+            }
+        }
 
         private void App_LogChanged(object sender, EventArgs e)
         {

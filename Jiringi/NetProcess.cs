@@ -269,14 +269,14 @@ namespace Photon.Jiringi
                         if (running_code == (int)TraingingStages.Evaluation)
                             for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             {
-                                result_factor *= 100 + record.result[i];
-                                data_factor *= 100 + OutOfLine[best].LastPrediction.ResultSignals[i];
+                                result_factor *= 1 + record.result[i] / 100D;
+                                data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i] / 100D;
                             }
                         else
                             for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             {
-                                result_factor *= 100 + record.result[i];
-                                data_factor *= 100 + Processes[best].LastPredict.ResultSignals[i];
+                                result_factor *= 1 + record.result[i] / 100D;
+                                data_factor *= 1 + Processes[best].LastPredict.ResultSignals[i] / 100D;
                             }
                         data_price = result_price * (data_factor / result_factor);
                         break;
