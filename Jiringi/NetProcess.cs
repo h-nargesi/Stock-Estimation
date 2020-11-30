@@ -276,7 +276,7 @@ namespace Photon.Jiringi
                             for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             {
                                 result_factor *= 1 + record.result[i] / 100D;
-                                data_factor *= 1 + Processes[best].LastPredict.ResultSignals[i] / 100D;
+                                data_factor *= 1 + Processes[best].LastPrediction.ResultSignals[i] / 100D;
                             }
                         data_price = result_price * (data_factor / result_factor);
                         result_price = result_price * ((1 + record.result[^1] / 100D) / result_factor);
