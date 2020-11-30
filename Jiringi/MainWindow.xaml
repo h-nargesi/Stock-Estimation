@@ -17,6 +17,8 @@
                 <MenuItem Header="Create" Click="Networks_Create"></MenuItem>
                 <MenuItem Header="Load" Click="Networks_Load"></MenuItem>
                 <MenuItem Header="Save" Click="Networks_Save"></MenuItem>
+                <Separator/>
+                <MenuItem Header="Print Info" Click="MenuItem_PrintInfo"></MenuItem>
             </MenuItem>
             <MenuItem Header="Data Provider"></MenuItem>
             <MenuItem Header="Training">
