@@ -196,41 +196,38 @@ namespace Photon.Jiringi
 
                 if (DateTime.Now.Ticks - last_time_text_reported > report_time_interval)
                 {
-                    Task.Run(() =>
+                    uint done_count;
+                    long remain_count;
+                    switch (Stage)
                     {
-                        uint done_count;
-                        long remain_count;
-                        switch (Stage)
-                        {
-                            case TrainingStages.Training:
-                                done_count = DataProvider.TrainingCount;
-                                remain_count = DataProvider.TrainingCount - Offset;
-                                remain_count += DataProvider.ValidationCount;
-                                remain_count += DataProvider.EvaluationCount;
-                                break;
-                            case TrainingStages.Validation:
-                                done_count = DataProvider.ValidationCount;
-                                remain_count = DataProvider.ValidationCount - Offset;
-                                remain_count += DataProvider.EvaluationCount;
-                                break;
-                            case TrainingStages.Evaluation:
-                                done_count = DataProvider.EvaluationCount;
-                                remain_count = DataProvider.EvaluationCount - Offset;
-                                break;
-                            default: throw new Exception("Invalid stage type");
-                        }
+                        case TrainingStages.Training:
+                            done_count = DataProvider.TrainingCount;
+                            remain_count = DataProvider.TrainingCount - Offset;
+                            remain_count += DataProvider.ValidationCount;
+                            remain_count += DataProvider.EvaluationCount;
+                            break;
+                        case TrainingStages.Validation:
+                            done_count = DataProvider.ValidationCount;
+                            remain_count = DataProvider.ValidationCount - Offset;
+                            remain_count += DataProvider.EvaluationCount;
+                            break;
+                        case TrainingStages.Evaluation:
+                            done_count = DataProvider.EvaluationCount;
+                            remain_count = DataProvider.EvaluationCount - Offset;
+                            break;
+                        default: throw new Exception("Invalid stage type");
+                    }
 
-                        ProgressBar = Offset * 100D / done_count;
-                        ProgressInfo =
+                    ProgressBar = Offset * 100D / done_count;
+                    ProgressInfo =
 @$"#{Epoch} {Stage} {PrintUnsign(ProgressBar, 3):R}% ID({current_instrument_id})";
-                        string message =
+                    string message =
 @$"Data loading={GetDurationString(record_duration, 6)} Prediction={GetDurationString(duration, 6)} Left time={GetDurationString(offset_interval * remain_count, 3)}";
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressBar)));
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressInfo)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressBar)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressInfo)));
 
-                        ChangeStatus(INFO, message);
-                        Networks_Report();
-                    });
+                    ChangeStatus(INFO, message);
+                    Networks_Report();
 
                     last_time_text_reported = DateTime.Now.Ticks;
                 }
@@ -279,13 +276,11 @@ namespace Photon.Jiringi
                                 data_factor *= 1 + Processes[best].LastPrediction.ResultSignals[i] / 100D;
                             }
                         data_price = result_price * (data_factor / result_factor);
-                        result_price = result_price * ((1 + record.result[^1] / 100D) / result_factor);
                         break;
                     case BasicalMethodsTypes.AngleBased:
                         result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
                         data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
                         data_price = result_price * (data_factor / result_factor);
-                        result_price = result_price * ((1 + CacherRadian.K * Math.Tan(record.result[^1])) / result_factor);
                         break;
                     default: data_price = 0; break;
                 }
@@ -296,14 +291,15 @@ namespace Photon.Jiringi
                 while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
                 while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
 
-                Task.Run(()=>
+                Task.Run(() =>
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
+                    Thread.Sleep(100);
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
                 });
 
                 // let the ui to change
-                Thread.Sleep(850);
+                Thread.Sleep(1000);
             }
         }
         protected override void OnFinished()

@@ -205,7 +205,8 @@ namespace Photon.Jiringi
                                     current_image.regularization);
                                 replace = true;
                             }
-                            if (best_image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack bdep)
+                            if (best_image != null &&
+                                best_image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack bdep)
                             {
                                 prc_info.best_image = new NeuralNetworkImage(
                                     best_image.layers,
@@ -268,7 +269,7 @@ namespace Photon.Jiringi
             try
             {
                 NetProcess.ChangeStatusWithLog(NetProcess.INFO, "Saving neural network instructor ...");
-                TrainProcessSerializer.Serialize(saving.FileName, NetProcess,
+                LearningProcessSerializer.Serialize(saving.FileName, NetProcess,
                     ((DataProvider)NetProcess.DataProvider).Method.ToString());
                 NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The data saved.");
             }
@@ -313,7 +314,7 @@ namespace Photon.Jiringi
 
             App.Log($"Closing");
             if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLine.Count > 0)
-                TrainProcessSerializer.Serialize("temp.nnp", NetProcess,
+                LearningProcessSerializer.Serialize("temp.nnp", NetProcess,
                     ((DataProvider)NetProcess.DataProvider).Method.ToString());
 
             App.Setting.Watching = false;
