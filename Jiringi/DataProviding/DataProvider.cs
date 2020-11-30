@@ -106,7 +106,7 @@ namespace Photon.Jiringi.DataProviding
                 sqlite.CommandText = sql_trade;
             }
         }
-        public Task<Record> PrepareNextData(uint offset, TraingingStages stage)
+        public Task<Record> PrepareNextData(uint offset, TrainingStages stage)
         {
             return Task.Run(() =>
             {
@@ -116,9 +116,9 @@ namespace Photon.Jiringi.DataProviding
 
                 var (instrument_id, record_offset) = stage switch
                 {
-                    TraingingStages.Training => FindCompany(cumulative_frequency_training, offset),
-                    TraingingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
-                    TraingingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
+                    TrainingStages.Training => FindCompany(cumulative_frequency_training, offset),
+                    TrainingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
+                    TrainingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
                     _ => throw new Exception("Invalid stage type"),
                 };
 
@@ -271,7 +271,7 @@ namespace Photon.Jiringi.DataProviding
             //if (sb.Length > digits) sb = sb.Substring(0, digits);
             return sa == sb;
         }
-        private (double[], double[]) PrepareNextData_OLD(uint offset, TraingingStages stage)
+        private (double[], double[]) PrepareNextData_OLD(uint offset, TrainingStages stage)
         {
             var result = new double[RESULT_COUNT];
             var signal = new double[SIGNAL_COUNT];
@@ -279,9 +279,9 @@ namespace Photon.Jiringi.DataProviding
             int r = 0, s = 0;
             var (company_id, record_offset) = stage switch
             {
-                TraingingStages.Training => FindCompany(cumulative_frequency_training, offset),
-                TraingingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
-                TraingingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
+                TrainingStages.Training => FindCompany(cumulative_frequency_training, offset),
+                TrainingStages.Validation => FindCompany(cumulative_frequency_validation, offset),
+                TrainingStages.Evaluation => FindCompany(cumulative_frequency_evaluation, offset),
                 _ => throw new Exception("Invalid stage type"),
             };
 

@@ -17,7 +17,7 @@ namespace Photon.Jiringi.Config
         private const string process_graph_reporting = "graph-reporting";
         private const string process_text_reporting = "text-reporting";
 
-        public TraingingStages? Stage
+        public TrainingStages? Stage
         {
             get
             {
@@ -26,7 +26,7 @@ namespace Photon.Jiringi.Config
 
                 str = str.ToLower();
                 str = char.ToUpper(str[0]) + str.Substring(1);
-                return (TraingingStages)Enum.Parse(typeof(TraingingStages), str);
+                return (TrainingStages)Enum.Parse(typeof(TrainingStages), str);
             }
             set { SetSetting(process_stage, value?.ToString().ToLower()); }
         }

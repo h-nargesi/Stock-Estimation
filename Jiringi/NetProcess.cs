@@ -77,7 +77,7 @@ namespace Photon.Jiringi
             // prepare report info
             double accuracy = 0;
             foreach (var prc in Processes)
-                accuracy = Math.Max(prc.CurrentAccuracy, accuracy);
+                accuracy = Math.Max(prc.Accuracy, accuracy);
 
             string cur_proc = $"Current [{Processes.Count} net(s), " +
                 $"best:{PrintUnsign(accuracy * 100, 4):R}]";
@@ -202,18 +202,18 @@ namespace Photon.Jiringi
                         long remain_count;
                         switch (Stage)
                         {
-                            case TraingingStages.Training:
+                            case TrainingStages.Training:
                                 done_count = DataProvider.TrainingCount;
                                 remain_count = DataProvider.TrainingCount - Offset;
                                 remain_count += DataProvider.ValidationCount;
                                 remain_count += DataProvider.EvaluationCount;
                                 break;
-                            case TraingingStages.Validation:
+                            case TrainingStages.Validation:
                                 done_count = DataProvider.ValidationCount;
                                 remain_count = DataProvider.ValidationCount - Offset;
                                 remain_count += DataProvider.EvaluationCount;
                                 break;
-                            case TraingingStages.Evaluation:
+                            case TrainingStages.Evaluation:
                                 done_count = DataProvider.EvaluationCount;
                                 remain_count = DataProvider.EvaluationCount - Offset;
                                 break;
@@ -240,7 +240,7 @@ namespace Photon.Jiringi
             if (GraphReporting == Visibility.Visible)
             {
                 double accuracy = 0; double data_delta = 0; int best = -1;
-                if (running_code == (int)TraingingStages.Evaluation)
+                if (running_code == (int)TrainingStages.Evaluation)
                 {
                     for (var i = 0; i < OutOfLine.Count; i++)
                         if (accuracy < OutOfLine[i].Accuracy)
@@ -253,10 +253,10 @@ namespace Photon.Jiringi
                 else
                 {
                     for (var i = 0; i < Processes.Count; i++)
-                        if (accuracy < Processes[i].CurrentAccuracy)
+                        if (accuracy < Processes[i].Accuracy)
                         {
-                            accuracy = Processes[i].CurrentAccuracy;
-                            data_delta = Processes[i].LastPredict.ResultSignals[0];
+                            accuracy = Processes[i].Accuracy;
+                            data_delta = Processes[i].LastPrediction.ResultSignals[0];
                             best = i;
                         }
                 }
@@ -266,17 +266,17 @@ namespace Photon.Jiringi
                 {
                     case BasicalMethodsTypes.ChangeBased:
                         data_factor = result_factor = 1;
-                        if (running_code == (int)TraingingStages.Evaluation)
+                        if (running_code == (int)TrainingStages.Evaluation)
                             for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             {
-                                result_factor *= 100 + record.result[i];
-                                data_factor *= 100 + OutOfLine[best].LastPrediction.ResultSignals[i];
+                                result_factor *= 1 + record.result[i] / 100D;
+                                data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i];
                             }
                         else
                             for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             {
                                 result_factor *= 100 + record.result[i];
-                                data_factor *= 100 + Processes[best].LastPredict.ResultSignals[i];
+                                data_factor *= 100 + Processes[best].LastPrediction.ResultSignals[i];
                             }
                         data_price = result_price * (data_factor / result_factor);
                         break;
