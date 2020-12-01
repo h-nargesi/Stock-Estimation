@@ -24,6 +24,7 @@ namespace Photon.Jiringi
 
             DataValues = new ChartValues<ObservableValue>();
             PredictedValues = new ChartValues<ObservableValue>();
+            PredictedRecently = new ChartValues<ObservableValue>();
 
             App.Setting.Changed += Setting_Changed;
         }
@@ -32,26 +33,29 @@ namespace Photon.Jiringi
         {
             if (Stopped) return;
 
-            if (TextReporting != (App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed))
+            if (TextReportingVisibility != (App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed))
             {
                 time_reporter[0].Clear();
                 time_reporter[1].Clear();
                 time_reporter[2].Clear();
 
-                TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+                TextReportingVisibility = App.Setting.Process.TextReporting 
+                    ? Visibility.Visible : Visibility.Collapsed;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
             }
 
-            if (GraphReporting != (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
+            if (GraphReportingVisibility != (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
             {
                 if (App.Setting.Process.GraphReporting)
                 {
+                    PredictedRecently.Clear();
                     PredictedValues.Clear();
                     DataValues.Clear();
                 }
 
-                GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+                GraphReportingVisibility = App.Setting.Process.GraphReporting 
+                    ? Visibility.Visible : Visibility.Collapsed;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReportingVisibility)));
             }
         }
 
@@ -65,9 +69,10 @@ namespace Photon.Jiringi
         public string ProgressInfo { get; private set; }
         public ChartValues<ObservableValue> DataValues { get; }
         public ChartValues<ObservableValue> PredictedValues { get; }
+        public ChartValues<ObservableValue> PredictedRecently { get; }
         public int MaxGraphPoints { get; set; } = DataProviding.DataProvider.RECORDS_PREVIOUS_ONE_YEAR;
-        public Visibility TextReporting { get; private set; } = Visibility.Collapsed;
-        public Visibility GraphReporting { get; private set; } = Visibility.Collapsed;
+        public Visibility TextReportingVisibility { get; private set; } = Visibility.Collapsed;
+        public Visibility GraphReportingVisibility { get; private set; } = Visibility.Collapsed;
         #endregion
 
 
@@ -163,14 +168,15 @@ namespace Photon.Jiringi
                 MaxHistory = App.Setting.Process.LeftTimeEstimateLength
             };
 
+            PredictedRecently.Clear();
             PredictedValues.Clear();
             DataValues.Clear();
 
-            TextReporting = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+            TextReportingVisibility = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
 
-            GraphReporting = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+            GraphReportingVisibility = App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReportingVisibility)));
 
             method_type = ((DataProvider)DataProvider).Method;
         }
@@ -188,7 +194,7 @@ namespace Photon.Jiringi
             last_offset = current_offset;
             last_record_offset = current_record_offset;
 
-            if (TextReporting == Visibility.Visible)
+            if (TextReportingVisibility == Visibility.Visible)
             {
                 var record_duration = time_reporter[0].GetNextAvg(record.duration ?? 0);
                 duration = time_reporter[1].GetNextAvg(duration);
@@ -196,33 +202,21 @@ namespace Photon.Jiringi
 
                 if (DateTime.Now.Ticks - last_time_text_reported > report_time_interval)
                 {
-                    uint done_count;
                     long remain_count;
-                    switch (Stage)
+                    var done_count = Stage switch
                     {
-                        case TrainingStages.Training:
-                            done_count = DataProvider.TrainingCount;
-                            remain_count = DataProvider.TrainingCount - Offset;
-                            remain_count += DataProvider.ValidationCount;
-                            remain_count += DataProvider.EvaluationCount;
-                            break;
-                        case TrainingStages.Validation:
-                            done_count = DataProvider.ValidationCount;
-                            remain_count = DataProvider.ValidationCount - Offset;
-                            remain_count += DataProvider.EvaluationCount;
-                            break;
-                        case TrainingStages.Evaluation:
-                            done_count = DataProvider.EvaluationCount;
-                            remain_count = DataProvider.EvaluationCount - Offset;
-                            break;
-                        default: throw new Exception("Invalid stage type");
-                    }
+                        TrainingStages.Training => DataProvider.TrainingCount,
+                        TrainingStages.Validation => DataProvider.ValidationCount,
+                        TrainingStages.Evaluation => DataProvider.EvaluationCount,
+                        _ => throw new Exception("Invalid stage type"),
+                    };
+                    remain_count = done_count - Offset;
 
                     ProgressBar = Offset * 100D / done_count;
                     ProgressInfo =
 @$"#{Epoch} {Stage} {PrintUnsign(ProgressBar, 3):R}% ID({current_instrument_id})";
                     string message =
-@$"Data loading={GetDurationString(record_duration, 6)} Prediction={GetDurationString(duration, 6)} Left time={GetDurationString(offset_interval * remain_count, 3)}";
+@$"Data loading={GetDurationString(record_duration, 6)} Prediction={GetDurationString(duration, 6)} Left time={GetDurationString(offset_interval * (done_count - Offset), 3)}";
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressBar)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ProgressInfo)));
 
@@ -234,8 +228,13 @@ namespace Photon.Jiringi
             }
 
 
-            if (GraphReporting == Visibility.Visible)
+            if (GraphReportingVisibility == Visibility.Visible)
             {
+                DataValues.Add(new ObservableValue(result_price));
+                while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
+                Task.Run(() =>
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues))));
+
                 double accuracy = 0; double data_delta = 0; int best = -1;
                 if (running_code == (int)TrainingStages.Evaluation)
                 {
@@ -258,44 +257,66 @@ namespace Photon.Jiringi
                         }
                 }
 
+                int pr = DataProviding.DataProvider.RESULT_COUNT;
+                while (PredictedRecently.Count > 0 && --pr >= 1)
+                    PredictedRecently.RemoveAt(PredictedRecently.Count - 1);
                 double data_price, result_factor, data_factor;
                 switch (method_type)
                 {
                     case BasicalMethodsTypes.ChangeBased:
                         data_factor = result_factor = 1;
+                        for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
+                            result_factor *= 1 + record.result[i] / 100D;
                         if (running_code == (int)TrainingStages.Evaluation)
-                            for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
+                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
                             {
-                                result_factor *= 1 + record.result[i] / 100D;
                                 data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i] / 100D;
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently.Add(new ObservableValue(data_price));
                             }
                         else
-                            for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
+                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
                             {
-                                result_factor *= 1 + record.result[i] / 100D;
                                 data_factor *= 1 + Processes[best].LastPrediction.ResultSignals[i] / 100D;
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently.Add(new ObservableValue(data_price));
                             }
                         data_price = result_price * (data_factor / result_factor);
                         break;
                     case BasicalMethodsTypes.AngleBased:
                         result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
+                        if (running_code == (int)TrainingStages.Evaluation)
+                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                            {
+                                data_factor = 1 + CacherRadian.K * Math.Tan(
+                                    OutOfLine[best].LastPrediction.ResultSignals[i]);
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently.Add(new ObservableValue(data_price));
+                            }
+                        else
+                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                            {
+                                data_factor = 1 + CacherRadian.K * Math.Tan(
+                                    Processes[best].LastPrediction.ResultSignals[i]);
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently.Add(new ObservableValue(data_price));
+                            }
                         data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
                         data_price = result_price * (data_factor / result_factor);
                         break;
                     default: data_price = 0; break;
                 }
 
-                DataValues.Add(new ObservableValue(result_price));
                 PredictedValues.Add(new ObservableValue(data_price));
 
-                while (DataValues.Count > MaxGraphPoints) DataValues.RemoveAt(0);
-                while (PredictedValues.Count > MaxGraphPoints) PredictedValues.RemoveAt(0);
-
+                // it should not be greater than "DataValues"
+                while (PredictedValues.Count > DataValues.Count) PredictedValues.RemoveAt(0);
+                // it should not be greater than "DataValues"
+                while (PredictedRecently.Count > DataValues.Count) PredictedRecently.RemoveAt(0);
                 Task.Run(() =>
                 {
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
-                    Thread.Sleep(100);
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedRecently)));
                 });
 
                 // let the ui to change
@@ -310,18 +331,18 @@ namespace Photon.Jiringi
             App.Log($"End Process:\tinstrument-id({last_instrument_id})\toffset({last_offset})\trecord({last_record_offset})");
             last_instrument_id = -1;
 
-            TextReporting = Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+            TextReportingVisibility = Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
         }
         protected override void OnError(Exception ex)
         {
             ChangeStatusWithLog(ERROR, ex.Message, ex.StackTrace);
 
-            TextReporting = Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReporting)));
+            TextReportingVisibility = Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
 
-            GraphReporting = Visibility.Collapsed;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReporting)));
+            GraphReportingVisibility = Visibility.Collapsed;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReportingVisibility)));
         }
 
         private static string PrintUnsign(double val, int? digit)

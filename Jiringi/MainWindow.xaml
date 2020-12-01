@@ -36,19 +36,22 @@
                 <TextBlock Text="{Binding NetworkReport, Mode=OneWay}" />
             </StatusBarItem>
         </StatusBar>
-        <Grid VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Height="24" Visibility="{Binding TextReporting}">
+        <Grid VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Height="24" Visibility="{Binding TextReportingVisibility}">
             <ProgressBar Margin="3,3,3,3" Maximum="100" Value="{Binding ProgressBar, Mode=OneWay}" />
             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding ProgressInfo, Mode=OneWay}" />
         </Grid>
         <Grid>
             <TextBox Name="LogBox" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" 
                      VerticalScrollBarVisibility="Auto" />
-            <lvc:CartesianChart Background="White" Visibility="{Binding GraphReporting}">
+            <lvc:CartesianChart Background="White" Visibility="{Binding GraphReportingVisibility}">
                 <lvc:CartesianChart.Series>
                     <lvc:LineSeries Values="{Binding DataValues}" Title="Data"
-                                    Stroke="#FF5D62D8" Fill="#00000000"></lvc:LineSeries>
+                                    Stroke="#FF5D62D8" Fill="#115D62D8"></lvc:LineSeries>
                     <lvc:LineSeries Values="{Binding PredictedValues}" Title="Prediction"
-                                    Stroke="#FFD42BD4" Fill="#00000000"></lvc:LineSeries>
+                                    Stroke="#FFA479A4" Fill="#05A479A4"></lvc:LineSeries>
+                    <lvc:LineSeries Values="{Binding PredictedRecently}" Title="Predicted Recently" 
+                                    Stroke="#FFD42BD4" Fill="#00000000">
+                    </lvc:LineSeries>
                 </lvc:CartesianChart.Series>
             </lvc:CartesianChart>
         </Grid>
