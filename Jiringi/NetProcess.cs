@@ -39,21 +39,25 @@ namespace Photon.Jiringi
                 time_reporter[1].Clear();
                 time_reporter[2].Clear();
 
-                TextReportingVisibility = App.Setting.Process.TextReporting 
+                TextReportingVisibility = App.Setting.Process.TextReporting
                     ? Visibility.Visible : Visibility.Collapsed;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
             }
 
-            if (GraphReportingVisibility != (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
+            if (GraphReportingVisibility != 
+                (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
             {
                 if (App.Setting.Process.GraphReporting)
                 {
                     PredictedRecently.Clear();
                     PredictedValues.Clear();
                     DataValues.Clear();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedRecently)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
                 }
 
-                GraphReportingVisibility = App.Setting.Process.GraphReporting 
+                GraphReportingVisibility = App.Setting.Process.GraphReporting
                     ? Visibility.Visible : Visibility.Collapsed;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphReportingVisibility)));
             }
@@ -171,6 +175,9 @@ namespace Photon.Jiringi
             PredictedRecently.Clear();
             PredictedValues.Clear();
             DataValues.Clear();
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedRecently)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PredictedValues)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues)));
 
             TextReportingVisibility = App.Setting.Process.TextReporting ? Visibility.Visible : Visibility.Collapsed;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
@@ -235,6 +242,7 @@ namespace Photon.Jiringi
                 Task.Run(() =>
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues))));
 
+                // Find best
                 double accuracy = 0; double data_delta = 0; int best = -1;
                 if (running_code == (int)TrainingStages.Evaluation)
                 {
@@ -257,9 +265,7 @@ namespace Photon.Jiringi
                         }
                 }
 
-                int pr = DataProviding.DataProvider.RESULT_COUNT;
-                while (PredictedRecently.Count > 0 && --pr >= 1)
-                    PredictedRecently.RemoveAt(PredictedRecently.Count - 1);
+                PredictedRecently.Add(new ObservableValue(0));
                 double data_price, result_factor, data_factor;
                 switch (method_type)
                 {
@@ -271,15 +277,21 @@ namespace Photon.Jiringi
                             for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
                             {
                                 data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i] / 100D;
-                                data_price = result_price * (data_factor / result_factor);
-                                PredictedRecently.Add(new ObservableValue(data_price));
+                                if (PredictedRecently.Count >= i + 1)
+                                {
+                                    data_price = result_price * (data_factor / result_factor);
+                                    PredictedRecently[^(i + 1)].Value = data_price;
+                                }
                             }
                         else
                             for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
                             {
                                 data_factor *= 1 + Processes[best].LastPrediction.ResultSignals[i] / 100D;
-                                data_price = result_price * (data_factor / result_factor);
-                                PredictedRecently.Add(new ObservableValue(data_price));
+                                if (PredictedRecently.Count >= i + 1)
+                                {
+                                    data_price = result_price * (data_factor / result_factor);
+                                    PredictedRecently[^(i + 1)].Value = data_price;
+                                }
                             }
                         data_price = result_price * (data_factor / result_factor);
                         break;
@@ -290,16 +302,22 @@ namespace Photon.Jiringi
                             {
                                 data_factor = 1 + CacherRadian.K * Math.Tan(
                                     OutOfLine[best].LastPrediction.ResultSignals[i]);
-                                data_price = result_price * (data_factor / result_factor);
-                                PredictedRecently.Add(new ObservableValue(data_price));
+                                if (PredictedRecently.Count >= i + 1)
+                                {
+                                    data_price = result_price * (data_factor / result_factor);
+                                    PredictedRecently[^(i + 1)].Value = data_price;
+                                }
                             }
                         else
                             for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
                             {
                                 data_factor = 1 + CacherRadian.K * Math.Tan(
                                     Processes[best].LastPrediction.ResultSignals[i]);
-                                data_price = result_price * (data_factor / result_factor);
-                                PredictedRecently.Add(new ObservableValue(data_price));
+                                if (PredictedRecently.Count >= i + 1)
+                                {
+                                    data_price = result_price * (data_factor / result_factor);
+                                    PredictedRecently[^(i + 1)].Value = data_price;
+                                }
                             }
                         data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
                         data_price = result_price * (data_factor / result_factor);
