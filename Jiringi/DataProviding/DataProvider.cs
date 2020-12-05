@@ -61,8 +61,11 @@ namespace Photon.Jiringi.DataProviding
                     count = (uint)(int)reader[1];
                     if (count > 0)
                     {
+#if DEBUG
+                        if (count > 200) count = 200;
+#endif
                         cumulative_frequency_training.Add(
-                            new Step(instrument_id, TrainingCount, count, true));
+                        new Step(instrument_id, TrainingCount, count, true));
                         TrainingCount += count;
                         is_inserted = true;
                     }
@@ -70,6 +73,9 @@ namespace Photon.Jiringi.DataProviding
                     count = (uint)(int)reader[2];
                     if (count > 0)
                     {
+#if DEBUG
+                        if (count > 200) count = 200;
+#endif
                         cumulative_frequency_validation.Add(
                             new Step(instrument_id, ValidationCount, count, false));
                         ValidationCount += count;
@@ -79,6 +85,9 @@ namespace Photon.Jiringi.DataProviding
                     count = (uint)(int)reader[3];
                     if (count > 0)
                     {
+#if DEBUG
+                        if (count > 200) count = 200;
+#endif
                         cumulative_frequency_evaluation.Add(
                             new Step(instrument_id, EvaluationCount, count, false));
                         EvaluationCount += count;
@@ -96,7 +105,7 @@ namespace Photon.Jiringi.DataProviding
                             case BasicalMethodsTypes.ChangeBased:
                                 caches.Add(instrument_id, Cache.Build_ChangeBased(RESULT_COUNT, RECORDS_THIS_YEAR_IN_SIGNAL, YEARS_COUNT, RECORDS_PREVIOUS_ONE_YEAR));
                                 break;
-                            default:throw new Exception("Invalid basical method");
+                            default: throw new Exception("Invalid basical method");
                         }
                 }
 
