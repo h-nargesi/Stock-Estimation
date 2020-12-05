@@ -43,7 +43,7 @@ namespace Photon.Jiringi.Config
         public string CurrentPath { get; }
         public int Count => setting.Count;
 
-        public ConfigHandler GetConfig(string name, object default_value)
+        public ConfigHandler GetOrCreateConfig(string name)
         {
             JObject obj;
             locker.AcquireWriterLock(-1);
@@ -51,8 +51,7 @@ namespace Photon.Jiringi.Config
             {
                 if (!setting.ContainsKey(name))
                 {
-                    if (default_value == null) obj = new JObject();
-                    else obj = new JObject(default_value);
+                    obj = new JObject();
                     setting.Add(name, obj);
                 }
                 else obj = setting.Value<JObject>(name);
@@ -68,6 +67,54 @@ namespace Photon.Jiringi.Config
             {
                 if (!setting.ContainsKey(name)) return null;
                 return new ConfigHandlerPack(setting.Value<JObject>(name), locker, $"{CurrentPath}.{name}");
+            }
+            finally { locker.ReleaseReaderLock(); }
+        }
+        public ConfigHandler[] GetOrCreateConfigArray(string name)
+        {
+            JObject[] obj;
+            locker.AcquireWriterLock(-1);
+            try
+            {
+                ConfigHandler[] value;
+                if (!setting.ContainsKey(name))
+                {
+                    obj = new JObject[] { new JObject() };
+                    value = new ConfigHandler[] {
+                        new ConfigHandlerPack(obj[0], locker, $"{CurrentPath}.{name}")
+                    };
+                    setting.Add(name, JArray.FromObject(obj));
+                }
+                else
+                {
+                    var array = setting.Value<JArray>(name);
+                    value = array.Select(
+                        jv => new ConfigHandlerPack(
+                            jv.Value<JObject>(), locker, $"{CurrentPath}.{name}")
+                    ).ToArray();
+                    return value;
+                }
+
+                return value;
+            }
+            finally { locker.ReleaseWriterLock(); }
+        }
+        public ConfigHandler[] GetConfigArray(string name)
+        {
+            locker.AcquireReaderLock(-1);
+            try
+            {
+
+                if (!setting.ContainsKey(name)) return null;
+                else
+                {
+                    var array = setting.Value<JArray>(name);
+                    var value = array.Select(
+                        jv => new ConfigHandlerPack(
+                            jv.Value<JObject>(), locker, $"{CurrentPath}.{name}")
+                    ).ToArray();
+                    return value;
+                }
             }
             finally { locker.ReleaseReaderLock(); }
         }

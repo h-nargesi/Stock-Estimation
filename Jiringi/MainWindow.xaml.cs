@@ -17,13 +17,11 @@ using System.Windows.Shapes;
 using Microsoft.Win32;
 using Photon.Jiringi.Config;
 using Photon.Jiringi.DataProviding;
+using Photon.Jiringi.NetSpecifics;
 using Photon.NeuralNetwork.Chista;
 using Photon.NeuralNetwork.Chista.Implement;
 using Photon.NeuralNetwork.Chista.Serializer;
 using Photon.NeuralNetwork.Chista.Trainer;
-using LiveCharts;
-using LiveCharts.Wpf;
-using Photon.Jiringi.NetSpecifics;
 
 namespace Photon.Jiringi
 {
@@ -107,28 +105,8 @@ namespace Photon.Jiringi
                 Stop_Process();
                 NetProcess.ChangeStatusWithLog(NetProcess.INFO, "New brain ...");
 
-                var layers = App.Setting.Brain.Layers.NodesCount;
-                if (layers == null || layers.Length == 0)
-                {
-                    App.Setting.Brain.Layers.NodesCount = new int[0];
-                    NetProcess.ChangeStatusWithLog(NetProcess.ERROR, "The default layer's node count is not set.");
-                    return;
-                }
-
-                var images = new NeuralNetworkImage[App.Setting.Brain.ImagesCount];
-                var conduction = App.Setting.Brain.Layers.Conduction.ToLower() == "soft-relu" ?
-                    (IConduction)new SoftReLU() : new ReLU();
-                var out_data_range = App.Setting.Brain.BasicalMethod == BasicalMethodsTypes.AngleBased ?
-                    (IDataConvertor)new DataRangeDouble(Math.PI / 2, 0) : new DataRange(20, 0);
-
-                for (int i = 0; i < images.Length; i++)
-                    images[i] = new NeuralNetworkInitializer()
-                        .SetInputSize(DataProvider.SIGNAL_COUNT)
-                        .AddLayer(conduction, layers)
-                        .AddLayer(new Sigmoind(), DataProvider.RESULT_COUNT)
-                        .SetCorrection(new ErrorStack(DataProvider.RESULT_COUNT), new RegularizationL2())
-                        .SetDataConvertor(new DataRange(5, 0), out_data_range)
-                        .Image();
+                if ((App.Setting.InitialNetsInfo.ChistaNets?.Length ?? 0) == 0)
+                    throw new Exception("No chista-net is set.");
 
                 // reset all values
                 NetProcess.LoadProgress(new LearningProcessInfo
@@ -137,16 +115,60 @@ namespace Photon.Jiringi
                     Offset = 0,
                     Stage = TrainingStages.Training,
                 });
-                ((DataProvider)NetProcess.DataProvider).Method = App.Setting.Brain.BasicalMethod;
 
-                // add new processes
-                foreach (var image in images)
-                    NetProcess.AddProgress(new Brain(image)
+                ((DataProvider)NetProcess.DataProvider).Method = App.Setting.InitialNetsInfo.BasicalMethod;
+
+                var leayers = App.Setting.InitialNetsInfo.ChistaNets;
+                var out_data_range = 
+                    App.Setting.InitialNetsInfo.BasicalMethod == BasicalMethodsTypes.AngleBased ?
+                    (IDataConvertor)new DataRangeDouble(Math.PI / 2, 0) : new DataRange(20, 0);
+
+                for (int i = 0; i < App.Setting.InitialNetsInfo.ImagesCount; i++)
+                {
+                    var initalizer = new NeuralNetworkInitializer();
+                    var input_convertor = new DataRange(5, 0);
+                    var input_size = DataProvider.SIGNAL_COUNT;
+
+                    for (int l = 0; l < leayers.Length; l++)
                     {
-                        LearningFactor = App.Setting.Brain.LearningFactor,
-                        CertaintyFactor = App.Setting.Brain.CertaintyFactor,
-                        DropoutFactor = App.Setting.Brain.DropoutFactor,
-                    });
+                        var layers = leayers[l].HiddenCount;
+                        if (layers == null || layers.Length == 0)
+                            throw new Exception("The default layer's node count is not set.");
+
+                        var conduction = Tools.Conduction(leayers[l].Conduction);
+                        var output_func = Tools.Conduction(leayers[l].OutputFunction);
+                        var error_func = Tools.ErrorFunction(leayers[l].ErrorFunction);
+
+                        initalizer
+                            .SetInputSize(input_size)
+                            .AddLayer(conduction, layers);
+
+                        if (l < leayers.Length - 1)
+                        {
+                            initalizer
+                                .AddLayer(output_func, leayers[l].OutputCount)
+                                .SetCorrection(error_func, new RegularizationL2())
+                                .SetDataConvertor(input_convertor, null)
+                                .SetDataCombiner(new DataAttacher());
+
+                            input_size += leayers[l].OutputCount;
+                            input_convertor = null;
+                        }
+                        else
+                        {
+                            initalizer
+                                .AddLayer(output_func, DataProvider.RESULT_COUNT)
+                                .SetCorrection(error_func, new RegularizationL2())
+                                .SetDataConvertor(input_convertor, out_data_range);
+                        }
+                    }
+
+                    NetProcess.AddRunningProgress(
+                        initalizer.ChistaNet(
+                            App.Setting.InitialNetsInfo.LearningFactor,
+                            App.Setting.InitialNetsInfo.CertaintyFactor,
+                            App.Setting.InitialNetsInfo.DropoutFactor));
+                }
 
                 NetProcess.Networks_Report();
                 App.Log(NetProcess.PrintInfo());
@@ -191,48 +213,13 @@ namespace Photon.Jiringi
 
                         for (var p = 0; p < inst_process_info.Processes.Count; p++)
                         {
-                            var current_image = inst_process_info.Processes[p].Brain.Image();
-                            var best_image = inst_process_info.Processes[p].BestBrainImage;
-                            var replace = false;
-                            var prc_info = inst_process_info.Processes[p].ProcessInfo();
-                            if (current_image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack cdep)
-                            {
-                                prc_info.current_image = new NeuralNetworkImage(
-                                    current_image.layers, 
-                                    new ErrorStack(cdep.IndexCount),
-                                    current_image.input_convertor, 
-                                    current_image.output_convertor, 
-                                    current_image.regularization);
-                                replace = true;
-                            }
-                            if (best_image != null &&
-                                best_image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack bdep)
-                            {
-                                prc_info.best_image = new NeuralNetworkImage(
-                                    best_image.layers,
-                                    new ErrorStack(bdep.IndexCount),
-                                    best_image.input_convertor,
-                                    best_image.output_convertor,
-                                    best_image.regularization);
-                                replace = true;
-                            }
-                            if (replace)
-                                inst_process_info.Processes[p] = prc_info.TrainProcess();
+                            var net_process = ErrorStackReplacement.Replace(inst_process_info.Processes[p]);
+                            if (net_process != null) inst_process_info.Processes[p] = net_process;
                         }
-                        for (var o = 0; o < inst_process_info.OutOfLine.Count; o++)
+                        for (var o = 0; o < inst_process_info.OutOfLines.Count; o++)
                         {
-                            var image = inst_process_info.OutOfLine[o].Image;
-                            if (image.error_fnc is NeuralNetwork.Chista.Deprecated.ErrorStack dep)
-                            {
-                                var prc_info = inst_process_info.OutOfLine[o].ProcessInfo();
-                                prc_info.current_image = new NeuralNetworkImage(
-                                    image.layers, 
-                                    new ErrorStack(dep.IndexCount),
-                                    image.input_convertor, 
-                                    image.output_convertor, 
-                                    image.regularization);
-                                inst_process_info.OutOfLine[o] = prc_info.BrainInfo();
-                            }
+                            var net_process = ErrorStackReplacement.Replace(inst_process_info.OutOfLines[o]);
+                            if (net_process != null) inst_process_info.OutOfLines[o] = net_process;
                         }
 
                         Stop_Process();
@@ -313,7 +300,7 @@ namespace Photon.Jiringi
             Stop_Process();
 
             App.Log($"Closing");
-            if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLine.Count > 0)
+            if (NetProcess.Processes.Count > 0 || NetProcess.OutOfLines.Count > 0)
                 LearningProcessSerializer.Serialize("temp.nnp", NetProcess,
                     ((DataProvider)NetProcess.DataProvider).Method.ToString());
 

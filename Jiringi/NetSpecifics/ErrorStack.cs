@@ -1,5 +1,6 @@
 using System;
 using MathNet.Numerics.LinearAlgebra;
+using Photon.NeuralNetwork.Chista;
 using Photon.NeuralNetwork.Chista.Implement;
 using Photon.NeuralNetwork.Chista.Serializer;
 
@@ -29,10 +30,13 @@ namespace Photon.Jiringi.NetSpecifics
         public int IndexCount => indexed.Count;
         public override string Name => nameof(ErrorStack);
 
-
         public Vector<double> ErrorCalculation(Vector<double> output, Vector<double> values)
         {
             return indexed.PointwiseMultiply(values - output);
+        }
+        public double Accuracy(NeuralNetworkFlash prediction)
+        {
+            return 1 - prediction.ErrorAverage;
         }
 
 

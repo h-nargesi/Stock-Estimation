@@ -99,7 +99,7 @@ namespace Photon.Jiringi.Config
             Thread.Sleep(100); // sure file is closed by other editor
             LoadFrom(FileName, (log_message) =>
             {
-                brain_instance = null;
+                initial_nets_info_instance = null;
                 process = null;
                 App.Log($"{log_message} ({e.ChangeType})");
             });
@@ -114,14 +114,15 @@ namespace Photon.Jiringi.Config
             set { SetSetting(data_provider, value); }
         }
 
-        private BrainConfigHandler brain_instance;
-        public BrainConfigHandler Brain
+        private InitialNetsInfoConfigHandler initial_nets_info_instance;
+        public InitialNetsInfoConfigHandler InitialNetsInfo
         {
             get
             {
-                if (brain_instance == null)
-                    brain_instance = new BrainConfigHandler(GetConfig(BrainConfigHandler.key, null));
-                return brain_instance;
+                if (initial_nets_info_instance == null)
+                    initial_nets_info_instance = new InitialNetsInfoConfigHandler(
+                        GetOrCreateConfig(InitialNetsInfoConfigHandler.key));
+                return initial_nets_info_instance;
             }
         }
 
@@ -131,7 +132,7 @@ namespace Photon.Jiringi.Config
             get
             {
                 if (process == null)
-                    process = new ProcessConfigHandler(GetConfig(ProcessConfigHandler.key, null));
+                    process = new ProcessConfigHandler(GetOrCreateConfig(ProcessConfigHandler.key));
                 return process;
             }
         }

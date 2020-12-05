@@ -25,6 +25,7 @@ namespace Photon.Jiringi
             Setting = new RootConfigHandler();
 
             new ErrorStack(0).Register();
+            new DataAttacher().Register();
         }
 
 

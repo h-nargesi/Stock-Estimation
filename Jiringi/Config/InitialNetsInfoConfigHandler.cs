@@ -5,11 +5,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Photon.Jiringi.Config
 {
-    public class BrainConfigHandler : ConfigHandler
+    public class InitialNetsInfoConfigHandler : ConfigHandler
     {
-        public BrainConfigHandler(ConfigHandler setting) : base(setting) { }
+        public InitialNetsInfoConfigHandler(ConfigHandler setting) : base(setting) { }
 
-        public const string key = "brain";
+        public const string key = "initial-nets-info";
         private const string images_path = "images-path";
         private const string images_count = "images-count";
         private const string learning_factor = "learning-factor";
@@ -52,17 +52,6 @@ namespace Photon.Jiringi.Config
             set { SetSetting(dropout_factor, value); }
         }
 
-        private LayersConfigHandler layer_instance;
-        public LayersConfigHandler Layers
-        {
-            get
-            {
-                if (layer_instance == null)
-                    layer_instance = new LayersConfigHandler(GetConfig(LayersConfigHandler.key, null));
-                return layer_instance;
-            }
-        }
-
         public BasicalMethodsTypes BasicalMethodDefault { get; set; } = BasicalMethodsTypes.AngleBased;
         public BasicalMethodsTypes BasicalMethod
         {
@@ -72,6 +61,24 @@ namespace Photon.Jiringi.Config
                 return (BasicalMethodsTypes)Enum.Parse(typeof(BasicalMethodsTypes), str);
             }
             set { SetSetting(basical_method, value.ToString()); }
+        }
+
+
+        private ChistaNetsConfigHandler[] chista_nets_instance;
+        public ChistaNetsConfigHandler[] ChistaNets
+        {
+            get
+            {
+                if (chista_nets_instance == null)
+                {
+                    var layers = GetOrCreateConfigArray(ChistaNetsConfigHandler.key);
+                    chista_nets_instance = new ChistaNetsConfigHandler[layers.Length];
+                    for (int i = 0; i < layers.Length; i++)
+                        chista_nets_instance[i] = new ChistaNetsConfigHandler(layers[i]);
+                }
+
+                return chista_nets_instance;
+            }
         }
 
     }

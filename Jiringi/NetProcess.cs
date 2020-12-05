@@ -83,23 +83,11 @@ namespace Photon.Jiringi
         #region Change Status Methods
         public void Networks_Report()
         {
-            // prepare report info
-            double accuracy = 0;
-            foreach (var prc in Processes)
-                accuracy = Math.Max(prc.Accuracy, accuracy);
-
             string cur_proc = $"Current [{Processes.Count} net(s), " +
-                $"best:{PrintUnsign(accuracy * 100, 4):R}]";
+                $"best:{PrintUnsign((BestRunningProcess?.ReportingAccuracy ?? 0) * 100, 4):R}]";
 
-            if (OutOfLine.Count > 0)
-            {
-                accuracy = 0;
-                foreach (var prc in OutOfLine)
-                    accuracy = Math.Max(prc.Accuracy, accuracy);
-
-                cur_proc += $" Done [{OutOfLine.Count} net(s), " +
-                    $"best:{PrintUnsign(accuracy * 100, 4):R}]";
-            }
+            cur_proc += $" Done [{OutOfLines.Count} net(s), " +
+                $"best:{PrintUnsign((BestRunningOutOfLine?.ReportingAccuracy ?? 0) * 100, 4):R}]";
 
             NetworkReport = cur_proc;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NetworkReport)));
@@ -243,27 +231,12 @@ namespace Photon.Jiringi
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataValues))));
 
                 // Find best
-                double accuracy = 0; double data_delta = 0; int best = -1;
+                INetProcess Best;
                 if (running_code == (int)TrainingStages.Evaluation)
-                {
-                    for (var i = 0; i < OutOfLine.Count; i++)
-                        if (accuracy < OutOfLine[i].Accuracy)
-                        {
-                            accuracy = OutOfLine[i].Accuracy;
-                            data_delta = OutOfLine[i].LastPrediction.ResultSignals[0];
-                            best = i;
-                        }
-                }
+                    Best = BestRunningOutOfLine;
                 else
-                {
-                    for (var i = 0; i < Processes.Count; i++)
-                        if (accuracy < Processes[i].Accuracy)
-                        {
-                            accuracy = Processes[i].Accuracy;
-                            data_delta = Processes[i].LastPrediction.ResultSignals[0];
-                            best = i;
-                        }
-                }
+                    Best = BestRunningProcess;
+                var data_delta = Best.LastPrediction.ResultSignals[0];
 
                 PredictedRecently.Add(new ObservableValue(0));
                 double data_price, result_factor, data_factor;
@@ -273,52 +246,29 @@ namespace Photon.Jiringi
                         data_factor = result_factor = 1;
                         for (int i = 0; i < DataProviding.DataProvider.RESULT_COUNT; i++)
                             result_factor *= 1 + record.result[i] / 100D;
-                        if (running_code == (int)TrainingStages.Evaluation)
-                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                        for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                        {
+                            data_factor *= 1 + Best.LastPrediction.ResultSignals[i] / 100D;
+                            if (PredictedRecently.Count >= i + 1)
                             {
-                                data_factor *= 1 + OutOfLine[best].LastPrediction.ResultSignals[i] / 100D;
-                                if (PredictedRecently.Count >= i + 1)
-                                {
-                                    data_price = result_price * (data_factor / result_factor);
-                                    PredictedRecently[^(i + 1)].Value = data_price;
-                                }
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently[^(i + 1)].Value = data_price;
                             }
-                        else
-                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
-                            {
-                                data_factor *= 1 + Processes[best].LastPrediction.ResultSignals[i] / 100D;
-                                if (PredictedRecently.Count >= i + 1)
-                                {
-                                    data_price = result_price * (data_factor / result_factor);
-                                    PredictedRecently[^(i + 1)].Value = data_price;
-                                }
-                            }
+                        }
                         data_price = result_price * (data_factor / result_factor);
                         break;
                     case BasicalMethodsTypes.AngleBased:
                         result_factor = 1 + CacherRadian.K * Math.Tan(record.result[0]);
-                        if (running_code == (int)TrainingStages.Evaluation)
-                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                        for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
+                        {
+                            data_factor = 1 + CacherRadian.K * Math.Tan(
+                               Best.LastPrediction.ResultSignals[i]);
+                            if (PredictedRecently.Count >= i + 1)
                             {
-                                data_factor = 1 + CacherRadian.K * Math.Tan(
-                                    OutOfLine[best].LastPrediction.ResultSignals[i]);
-                                if (PredictedRecently.Count >= i + 1)
-                                {
-                                    data_price = result_price * (data_factor / result_factor);
-                                    PredictedRecently[^(i + 1)].Value = data_price;
-                                }
+                                data_price = result_price * (data_factor / result_factor);
+                                PredictedRecently[^(i + 1)].Value = data_price;
                             }
-                        else
-                            for (int i = DataProviding.DataProvider.RESULT_COUNT - 1; i >= 0; i--)
-                            {
-                                data_factor = 1 + CacherRadian.K * Math.Tan(
-                                    Processes[best].LastPrediction.ResultSignals[i]);
-                                if (PredictedRecently.Count >= i + 1)
-                                {
-                                    data_price = result_price * (data_factor / result_factor);
-                                    PredictedRecently[^(i + 1)].Value = data_price;
-                                }
-                            }
+                        }
                         data_factor = 1 + CacherRadian.K * Math.Tan(data_delta);
                         data_price = result_price * (data_factor / result_factor);
                         break;
