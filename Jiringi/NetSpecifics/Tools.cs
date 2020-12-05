@@ -15,8 +15,8 @@ namespace Photon.Jiringi.NetSpecifics
             {
                 "sigmoind" => (IConduction)new Sigmoind(),
                 "soft-relu" => new SoftReLU(),
-                "soft-max" => new SoftMax(),
                 "relu" => new ReLU(),
+                "soft-max" => new SoftMax(),
                 _ => throw new Exception("invalid conduction function")
             };
         }
