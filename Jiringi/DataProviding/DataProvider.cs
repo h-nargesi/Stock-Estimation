@@ -62,10 +62,10 @@ namespace Photon.Jiringi.DataProviding
                     if (count > 0)
                     {
 #if DEBUG
-                        if (count > 200) count = 200;
+                        if (TrainingCount >= 100) continue;
 #endif
                         cumulative_frequency_training.Add(
-                        new Step(instrument_id, TrainingCount, count, true));
+                            new Step(instrument_id, TrainingCount, count, true));
                         TrainingCount += count;
                         is_inserted = true;
                     }
@@ -74,7 +74,7 @@ namespace Photon.Jiringi.DataProviding
                     if (count > 0)
                     {
 #if DEBUG
-                        if (count > 200) count = 200;
+                        if (ValidationCount >= 100) continue;
 #endif
                         cumulative_frequency_validation.Add(
                             new Step(instrument_id, ValidationCount, count, false));
@@ -86,7 +86,7 @@ namespace Photon.Jiringi.DataProviding
                     if (count > 0)
                     {
 #if DEBUG
-                        if (count > 200) count = 200;
+                        if (EvaluationCount >= 100) continue;
 #endif
                         cumulative_frequency_evaluation.Add(
                             new Step(instrument_id, EvaluationCount, count, false));

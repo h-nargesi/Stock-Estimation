@@ -44,7 +44,7 @@ namespace Photon.Jiringi
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TextReportingVisibility)));
             }
 
-            if (GraphReportingVisibility != 
+            if (GraphReportingVisibility !=
                 (App.Setting.Process.GraphReporting ? Visibility.Visible : Visibility.Collapsed))
             {
                 if (App.Setting.Process.GraphReporting)
@@ -86,8 +86,9 @@ namespace Photon.Jiringi
             string cur_proc = $"Current [{Processes.Count} net(s), " +
                 $"best:{PrintUnsign((BestRunningProcess?.ReportingAccuracy ?? 0) * 100, 4):R}]";
 
-            cur_proc += $" Done [{OutOfLines.Count} net(s), " +
-                $"best:{PrintUnsign((BestRunningOutOfLine?.ReportingAccuracy ?? 0) * 100, 4):R}]";
+            if (OutOfLines.Count > 0)
+                cur_proc += $" Done [{OutOfLines.Count} net(s), " +
+                    $"best:{PrintUnsign((BestRunningOutOfLine?.ReportingAccuracy ?? 0) * 100, 4):R}]";
 
             NetworkReport = cur_proc;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NetworkReport)));
