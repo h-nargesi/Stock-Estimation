@@ -9,7 +9,7 @@
         Title="Stock Trade Estimation" Height="450" Width="800"
         Closing="Window_Closing">
     <Window.DataContext>
-        <local:NetProcess x:Name="NetProcess"></local:NetProcess>
+        <local:NetProcessRunner x:Name="NetProcess"></local:NetProcessRunner>
     </Window.DataContext>
     <DockPanel>
         <Menu VerticalAlignment="Top" DockPanel.Dock="Top">

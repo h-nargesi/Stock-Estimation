@@ -16,9 +16,9 @@ using Photon.NeuralNetwork.Chista.Trainer;
 
 namespace Photon.Jiringi
 {
-    public class NetProcess : Instructor, INotifyPropertyChanged
+    public class NetProcessRunner : Instructor, INotifyPropertyChanged
     {
-        public NetProcess() : base(new DataProvider())
+        public NetProcessRunner() : base(new DataProvider())
         {
             time_reporter = new TimeReporter[3];
 

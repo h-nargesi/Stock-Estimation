@@ -30,7 +30,7 @@ namespace Photon.Jiringi.NetSpecifics
         public int IndexCount => indexed.Count;
         public override string Name => nameof(ErrorStack);
 
-        public Vector<double> ErrorCalculation(Vector<double> output, Vector<double> values)
+        public Vector<double> NegativeErrorDerivative(Vector<double> output, Vector<double> values)
         {
             return indexed.PointwiseMultiply(values - output);
         }
@@ -53,5 +53,6 @@ namespace Photon.Jiringi.NetSpecifics
         {
             return "ErrorStack";
         }
+
     }
 }

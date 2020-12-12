@@ -1,7 +1,5 @@
 input data			-						325	-
-classification		result independent		 25	soft-max
-category-tagging	result independent		 98	sigmoind
-inc/red				result dependent		  2	soft-max
-angle predict		result dependent		 20	sigmoind
-
-https://www.adeveloperdiary.com/data-science/deep-learning/neural-network-with-softmax-in-python/
+classification		result independent		 25	soft-max/classification
+category-tagging	result independent		 98	sigmoind/tagging
+inc/red				result dependent		  2	soft-max/cross-entropy
+angle predict		result dependent		 20	sigmoind/errorest

@@ -42,15 +42,15 @@ namespace Photon.Jiringi
             try
             {
                 if (NetProcess.Processes.Count < 1)
-                    NetProcess.ChangeStatusWithLog(NetProcess.ERROR, "The process is not inizialized.");
+                    NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, "The process is not inizialized.");
                 else if (!NetProcess.Stopped)
-                    NetProcess.ChangeStatusWithLog(NetProcess.INFO, "The process already is running.");
+                    NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "The process already is running.");
 
                 else NetProcess.Start();
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
         }
         private void Evaluation_Process(object sender, RoutedEventArgs e)
@@ -58,9 +58,9 @@ namespace Photon.Jiringi
             try
             {
                 if (NetProcess.Processes.Count < 1)
-                    NetProcess.ChangeStatusWithLog(NetProcess.ERROR, "The process is not inizialized.");
+                    NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, "The process is not inizialized.");
                 else if (!NetProcess.Stopped)
-                    NetProcess.ChangeStatusWithLog(NetProcess.INFO, "The process already is running.");
+                    NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "The process already is running.");
 
                 else
                 {
@@ -71,7 +71,7 @@ namespace Photon.Jiringi
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
         }
         private void Stop_Process(object sender, RoutedEventArgs e)
@@ -82,7 +82,7 @@ namespace Photon.Jiringi
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
             finally
             {
@@ -93,7 +93,7 @@ namespace Photon.Jiringi
         {
             if (!NetProcess.Stopped)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.INFO, "The training process is stoped by user.");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "The training process is stoped by user.");
                 NetProcess.Stop();
             }
         }
@@ -103,7 +103,7 @@ namespace Photon.Jiringi
             try
             {
                 Stop_Process();
-                NetProcess.ChangeStatusWithLog(NetProcess.INFO, "New brain ...");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "New brain ...");
 
                 if ((App.Setting.InitialNetsInfo.ChistaNets?.Length ?? 0) == 0)
                     throw new Exception("No chista-net is set.");
@@ -172,11 +172,11 @@ namespace Photon.Jiringi
 
                 NetProcess.Networks_Report();
                 App.Log(NetProcess.PrintInfo());
-                NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The neural networks created.");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.DONE, "The neural networks created.");
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
             finally
             {
@@ -193,7 +193,7 @@ namespace Photon.Jiringi
 
             try
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.INFO, "Loading neural network process ...");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "Loading neural network process ...");
                 var file = GeneralFileRestore.Restore(openning.FileName, out string method);
 
                 BasicalMethodsTypes method_type;
@@ -234,11 +234,11 @@ namespace Photon.Jiringi
                             nameof(file), "this type of file is not supported.");
                 }
 
-                NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The data loaded.");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.DONE, "The data loaded.");
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
             finally
             {
@@ -255,14 +255,14 @@ namespace Photon.Jiringi
 
             try
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.INFO, "Saving neural network instructor ...");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.INFO, "Saving neural network instructor ...");
                 LearningProcessSerializer.Serialize(saving.FileName, NetProcess,
                     ((DataProvider)NetProcess.DataProvider).Method.ToString());
-                NetProcess.ChangeStatusWithLog(NetProcess.DONE, "The data saved.");
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.DONE, "The data saved.");
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
             finally
             {
@@ -278,7 +278,7 @@ namespace Photon.Jiringi
             }
             catch (Exception ex)
             {
-                NetProcess.ChangeStatusWithLog(NetProcess.ERROR, ex.Message, ex.StackTrace);
+                NetProcess.ChangeStatusWithLog(NetProcessRunner.ERROR, ex.Message, ex.StackTrace);
             }
         }
 

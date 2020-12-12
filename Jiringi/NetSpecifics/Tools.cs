@@ -27,7 +27,8 @@ namespace Photon.Jiringi.NetSpecifics
             {
                 "errorest" => (IErrorFunction)new Errorest(),
                 "error-stack" => new ErrorStack(DataProvider.RESULT_COUNT),
-                "classification" => new Classification(0),
+                "cross-entropy" => new Classification(),
+                "classification" => new Classification(),
                 "tagging" => new Tagging(0.8, 0.4),
                 _ => throw new Exception("invalid error function")
             };
