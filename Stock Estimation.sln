@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jiringi", "Jiringi\Jiringi.csproj", "{13224AA0-1CA2-447D-8FF1-758AD358621D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jiringi", "Jiringi\DotNet\Jiringi.csproj", "{13224AA0-1CA2-447D-8FF1-758AD358621D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chista-Core", "..\Chista\DotNet\Chista-Core\Chista-Core.csproj", "{0CD8E37E-EA00-426F-921D-A95843D45899}"
 EndProject

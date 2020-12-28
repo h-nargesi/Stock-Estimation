@@ -25,6 +25,9 @@ namespace Photon.Jiringi.DataProviding
         private readonly object sqlite_lock = new object();
         private readonly Dictionary<int, Cache> caches;
 
+        public int InputSize => SIGNAL_COUNT;
+        public int OutputSize => RESULT_COUNT;
+
         public uint TrainingCount { get; private set; }
         public uint ValidationCount { get; private set; }
         public uint EvaluationCount { get; private set; }
