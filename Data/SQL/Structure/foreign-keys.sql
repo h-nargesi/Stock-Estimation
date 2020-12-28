@@ -34,3 +34,20 @@ go
 --ALTER TABLE [CapitalIncrease] ADD FOREIGN KEY ([UnderwritingEndReportID]) REFERENCES ?([ID]) ON DELETE NO ACTION;
 --ALTER TABLE [CapitalIncrease] ADD FOREIGN KEY ([RegistrationReportID]) REFERENCES ?([ID]) ON DELETE NO ACTION;
 --ALTER TABLE [CashFlow] ADD FOREIGN KEY ([CompanyID]) REFERENCES [Company]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [CashFlow] ADD FOREIGN KEY ([MeetingID]) REFERENCES [Meeting]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [CashFlow] ADD FOREIGN KEY ([ReportID]) REFERENCES [Report]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [CashFlow] ADD FOREIGN KEY ([FinancialViewTypeID]) REFERENCES [FinancialViewType]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [CashFlowDetail] ADD FOREIGN KEY ([CashFlowID]) REFERENCES [CashFlow]([ID]) ON DELETE CASCADE;
+merge into CashFlowDetail dtl
+using CashFlowField fld
+on (dtl.CashFlowFieldID = fld.ID)
+when not matched by source then delete;
+ALTER TABLE [CashFlowDetail] ADD FOREIGN KEY ([CashFlowFieldID]) REFERENCES [CashFlowField]([ID]) ON DELETE CASCADE;
+ALTER TABLE [Company] ADD FOREIGN KEY ([TypeID]) REFERENCES [CompanyType]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [Company] ADD FOREIGN KEY ([StateID]) REFERENCES [CompanyState]([ID]) ON DELETE NO ACTION;
+ALTER TABLE [Company] ADD FOREIGN KEY ([ParentID]) REFERENCES [Company]([ID]) ON DELETE NO ACTION;
+--ALTER TABLE [Company] ADD FOREIGN KEY ([BrokerID]) REFERENCES ?([ID]) ON DELETE NO ACTION;
+--ALTER TABLE [Company] ADD FOREIGN KEY ([BrokerTradeID]) REFERENCES ?([ID]) ON DELETE NO ACTION;
+ALTER TABLE [CompanyContactInfo] ADD FOREIGN KEY ([CompanyID]) REFERENCES [Company]([ID]) ON DELETE CASCADE;
+ALTER TABLE [CompanyContactInfo] ADD FOREIGN KEY ([TypeID]) REFERENCES [ContactInfoType]([ID]) ON DELETE NO ACTION;
+-- > company-history
