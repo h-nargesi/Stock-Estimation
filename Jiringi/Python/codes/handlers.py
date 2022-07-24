@@ -1,22 +1,30 @@
 import pymssql as sql
 import numpy as np
 import pandas as pd
-import _thread as thread
 import json
 import re
 
-def SaveFile(data, name):
-    args = ('data/{}.npy'.format(name), data,)
-    thread.start_new_thread(np.save, args)
+def SaveFile(name, data):
+    data = np.array(data)
+    np.save('data/{}.npy'.format(name), data)
+    return data.shape
 
-def LoadFile(name, splits):
-    if splits is None:
-        return np.load('data/{}.npy'.format(name))
+def LoadFile(name, splits = None):
+    data = None
     
-    for i in range(i, splits):
+    if splits is None:
+        print("Loading {}.npy".format(name), end='')
+        data = np.load('data/{}.npy'.format(name))
+        print("\r{}.npy was loaded".format(name))
+        return data
+    
+    print("Loading files", end='')
+    for i in range(1, splits):
         file = 'data/{}-{}.npy'.format(name, i)
+        print("\rLoading {}-{}.npy".format(name, i), end='')
         if data is None: data = np.load(file)
         else: data = np.append(data, np.load(file))
+    print("\nLoading finished")
     
     return data
 

@@ -1,9 +1,8 @@
+from ast import arg
 import time
+import numpy as np
+import _thread as thread
 import codes.handlers as hd
-
-def read_trade(input_size, output_size, batch_size, verbose = 1):
-    loader = TradeReader(input_size, output_size, batch_size, verbose)
-    loader.ReadData()
 
 class TradeReader:
 
@@ -12,7 +11,7 @@ class TradeReader:
     file_index = 0
     VERBOSE = 0
 
-    def __init__(self, input_size, output_size, batch_size, verbose = 1):
+    def __init__(self, input_size, output_size, batch_size, verbose = 2):
         self.INPUT_SIZE = input_size
         self.BUFFER_SIZE = input_size + output_size
         self.BATCH_SIZE = batch_size
@@ -25,8 +24,9 @@ class TradeReader:
         instrument = None
         buffer = list()
         
-        if self.VERBOSE > 0:
+        if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
+
         dur = time.time()
         for row in cursor:
             if instrument != row[1]:
@@ -38,7 +38,7 @@ class TradeReader:
                     self.__save_and_reset()
 
             buffer.append(row[-1])
-            if self.VERBOSE > 0:
+            if self.VERBOSE >= 2:
                 print("\rReading data: {}".format(row[0], self.file_index), end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
@@ -50,21 +50,43 @@ class TradeReader:
 
         self.__save_and_reset()
 
-        if self.VERBOSE > 0:
+        if self.VERBOSE >= 1:
             print("\nReading finished in {0:.2f} sec and {1} files".format(
                 time.time() - dur, self.file_index))
     
     def __save_and_reset(self):
         self.file_index += 1
-        if self.VERBOSE > 1:
-            print("\nSaving file: {} with size: {}".format(self.file_index, len(self.x_training)))
-        hd.SaveFile(self.x_training, 'trade-x-{}'.format(self.file_index))
-        hd.SaveFile(self.y_training, 'trade-y-{}'.format(self.file_index))
+
+        if self.VERBOSE >= 4:
+            x_length = len(self.x_training)
+            x_depth = len(self.x_training[0])
+            y_length = len(self.y_training)
+            y_depth = len(self.y_training[0])
+            print("\nSaving file: {} with shape: x={}, y={}".format(
+                self.file_index, (x_length, x_depth), (y_length, y_depth)))
+
+        args = [
+            { "name": "trade-x-{}".format(self.file_index), "data": self.x_training },
+            { "name": "trade-y-{}".format(self.file_index), "data": self.y_training }
+        ]
+        thread.start_new_thread(self.SaveAllFiles, (args, ))
+
         self.x_training = list()
         self.y_training = list()
-    
+        
     def ReadRaw(self, query_name, parameters):
         hd.SqlQueryExecute(query_name, parameters, self.__graph_handler)
     
     def __graph_handler(self, cursor):
         self.x_training = [row for row in cursor]
+
+    def SaveAllFiles(self, files):
+        for file in files:
+            file["shape"] = hd.SaveFile(file["name"], file["data"])
+        
+        if self.VERBOSE >= 3:
+            message = ""
+            for file in files:
+                message += ", {}:{}".format(file["name"], file["shape"])
+            if len(message) > 0: message = message[2:]
+            print("\nFiles was saved:", message)
