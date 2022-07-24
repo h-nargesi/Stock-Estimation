@@ -1,6 +1,6 @@
-from ast import arg
+from asyncio import tasks
+import asyncio
 import time
-import numpy as np
 import _thread as thread
 import codes.handlers as hd
 
@@ -11,6 +11,9 @@ class TradeReader:
     file_index = 0
     VERBOSE = 0
 
+    loop = None
+    saving_tasks = set()
+
     def __init__(self, input_size, output_size, batch_size, verbose = 2):
         self.INPUT_SIZE = input_size
         self.BUFFER_SIZE = input_size + output_size
@@ -18,7 +21,10 @@ class TradeReader:
         self.VERBOSE = verbose
 
     def ReadData(self):
+        self.loop = asyncio.new_event_loop()
         hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
+        for t in self.saving_tasks:
+            self.loop.run_until_complete(t)
 
     def __data_handler(self, cursor):
         instrument = None
@@ -69,18 +75,13 @@ class TradeReader:
             { "name": "trade-x-{}".format(self.file_index), "data": self.x_training },
             { "name": "trade-y-{}".format(self.file_index), "data": self.y_training }
         ]
-        thread.start_new_thread(self.SaveAllFiles, (args, ))
+        saving_task = tasks.run_coroutine_threadsafe(self.__convert_and_save(args), self.loop)
+        self.saving_tasks.add(saving_task)
 
         self.x_training = list()
         self.y_training = list()
         
-    def ReadRaw(self, query_name, parameters):
-        hd.SqlQueryExecute(query_name, parameters, self.__graph_handler)
-    
-    def __graph_handler(self, cursor):
-        self.x_training = [row for row in cursor]
-
-    def SaveAllFiles(self, files):
+    async def __convert_and_save(self, files):
         for file in files:
             file["shape"] = hd.SaveFile(file["name"], file["data"])
         

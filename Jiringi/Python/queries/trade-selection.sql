@@ -1,6 +1,6 @@
 declare @Minsize int = 310
 
-select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
+select top 30000 ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     , t.InstrumentID
     , c.Size
     , CAST(greatest(least(Increasing / 0.05, 10), -10) AS FLOAT) as Increasing
