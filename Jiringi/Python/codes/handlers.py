@@ -4,6 +4,13 @@ import pandas as pd
 import json
 import re
 import os
+import shutil
+
+def DataExist():
+    return os.path.isdir('data/')
+
+def ClearDataDirectory():
+    shutil.rmtree('data/')
 
 def SaveFile(name, data):
     os.makedirs('data/', exist_ok=True)

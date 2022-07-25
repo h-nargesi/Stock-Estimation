@@ -15,9 +15,21 @@ class TradeReader:
         self.BATCH_SIZE = batch_size
         self.VERBOSE = verbose
 
-    def ReadData(self):
+    def ReadData(self, ignore_existing = False):
+
+        if ignore_existing == True:
+            if self.VERBOSE >= 1:
+                print("The data already have read. deleting data ...")
+            hd.ClearDataDirectory()
+        
+        elif ignore_existing == False and hd.DataExist():
+            if self.VERBOSE >= 1:
+                print("The data already have read.")
+            return
+
         hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
-        for task in self.saving_tasks: task.join()
+        
+        self.__wait_all_tasks_finished()
 
     def __data_handler(self, cursor):
         instrument = None
@@ -85,3 +97,6 @@ class TradeReader:
                 message += ", {}:{}".format(file["name"], file["shape"])
             if len(message) > 0: message = message[2:]
             print("\nFiles was saved:", message)
+    
+    def __wait_all_tasks_finished(self):
+        for task in self.saving_tasks: task.join()
