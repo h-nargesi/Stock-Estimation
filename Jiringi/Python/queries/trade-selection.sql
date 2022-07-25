@@ -3,7 +3,7 @@ declare @Minsize int = 310
 select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     , t.InstrumentID
     , c.Size
-    , CAST(greatest(least(Increasing / 0.05, 10), -10) AS FLOAT) as Increasing
+    , CAST(CASE WHEN Increasing > 10 THEN 10 WHEN Increasing < -10 THEN -10 ELSE Increasing END AS FLOAT) as Increasing
     --, CAST(Jalali / 10000 AS FLOAT) as Year
     --, CAST(Jalali / 100 % 100 AS FLOAT) as Month
     --, CAST(Jalali % 100 AS FLOAT) as Day
