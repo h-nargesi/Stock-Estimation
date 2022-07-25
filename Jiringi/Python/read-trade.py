@@ -1,7 +1,6 @@
 import codes.trade as trade
-import numpy as np
 
-loader = trade.TradeReader(300, 10, 300000, verbose=4)
+loader = trade.TradeReader(300, 10, 450000, verbose=4)
 loader.ReadData()
 
 # data = list()

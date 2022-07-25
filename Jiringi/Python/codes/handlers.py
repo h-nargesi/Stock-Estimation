@@ -3,8 +3,10 @@ import numpy as np
 import pandas as pd
 import json
 import re
+import os
 
 def SaveFile(name, data):
+    os.makedirs('data/', exist_ok=True)
     data = np.array(data)
     np.save('data/{}.npy'.format(name), data)
     return data.shape
