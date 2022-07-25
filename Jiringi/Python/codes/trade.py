@@ -6,15 +6,14 @@ class TradeReader:
 
     x_training = list()
     y_training = list()
-    file_index = 0
-    verbose = 0
     saving_tasks = list()
+    file_index = 0
 
     def __init__(self, input_size, output_size, batch_size, verbose = 2):
         self.INPUT_SIZE = input_size
         self.BUFFER_SIZE = input_size + output_size
         self.BATCH_SIZE = batch_size
-        self.verbose = verbose
+        self.VERBOSE = verbose
 
     def ReadData(self):
         hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
@@ -24,7 +23,7 @@ class TradeReader:
         instrument = None
         buffer = list()
         
-        if self.verbose >= 1:
+        if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
 
         dur = time.time()
@@ -38,7 +37,7 @@ class TradeReader:
                     self.__save_and_reset()
 
             buffer.append(row[-1])
-            if self.verbose >= 2:
+            if self.VERBOSE >= 2:
                 print("\rReading data: {}".format(row[0], self.file_index), end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
@@ -50,14 +49,14 @@ class TradeReader:
 
         self.__save_and_reset()
 
-        if self.verbose >= 1:
+        if self.VERBOSE >= 1:
             print("\nReading finished in {0:.2f} sec and {1} files".format(
                 time.time() - dur, self.file_index))
     
     def __save_and_reset(self):
         self.file_index += 1
 
-        if self.verbose >= 4:
+        if self.VERBOSE >= 4:
             x_length = len(self.x_training)
             x_depth = len(self.x_training[0])
             y_length = len(self.y_training)
@@ -80,7 +79,7 @@ class TradeReader:
         for file in files:
             file["shape"] = hd.SaveFile(file["name"], file["data"])
         
-        if self.verbose >= 3:
+        if self.VERBOSE >= 3:
             message = ""
             for file in files:
                 message += ", {}:{}".format(file["name"], file["shape"])
