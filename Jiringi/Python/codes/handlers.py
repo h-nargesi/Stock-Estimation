@@ -6,21 +6,15 @@ import re
 import os
 import shutil
 
-def ModelExist(solution):
-    return os.path.isdir('{}/model/'.format(solution))
-
-def DataExist(solution):
-    return os.path.isdir('{}/data/'.format(solution))
-
-def ClearDataDirectory(solution):
-    if DataExist(solution):
-        shutil.rmtree('{}/data/'.format(solution))
-
 def SaveFile(solution, name, data):
     os.makedirs('{}/data/'.format(solution), exist_ok=True)
     data = np.array(data)
     np.save('{}/data/{}.npy'.format(solution, name), data)
     return data.shape
+
+def ClearDataDirectory(solution):
+    if DataExist(solution):
+        shutil.rmtree('{}/data/'.format(solution))
 
 def GetFilesCount(solution):
     if not DataExist(solution): return 0
@@ -32,29 +26,14 @@ def GetFilesCount(solution):
             count += 1
     return count
 
-def LoadFile(solution, name, pices = None, offset = 1):
-    data = None
-    
-    if pices is None:
-        print("Loading {}.npy".format(name), end='')
-        data = np.load('{}/data/{}.npy'.format(solution, name))
-        print("\r{}.npy was loaded".format(name))
-        return data
-    
-    if offset < 1: offset = 1
+def ModelExist(solution):
+    return os.path.isdir('{}/model/'.format(solution))
 
-    print("Loading files", end='')
-    for i in range(offset, pices + offset):
-        file = '{}/data/{}-{}.npy'.format(solution, name, i)
-        print("\rLoading {}-{}.npy".format(name, i), end='')
-        if data is None: data = np.load(file)
-        else: data = np.append(data, np.load(file), axis=0)
-    print("\nLoading finished")
-    
-    return data
+def DataExist(solution):
+    return os.path.isdir('{}/data/'.format(solution))
 
 def LoadData(solution, test_count):
-    total = GetFilesCount()
+    total = GetFilesCount(solution)
 
     if total < 0: raise "Data have not read yet."
 
@@ -72,9 +51,31 @@ def LoadData(solution, test_count):
 
     return (x_training, y_training, x_testing, y_testing)
 
+def LoadFile(solution, name, pices = None, offset = 1):
+    data = None
+    
+    if pices is None:
+        print("Loading {}.npy".format(name), end='')
+        data = np.load('{}/data/{}.npy'.format(solution, name))
+        print("\r{}.npy was loaded".format(name))
+        return data
+    
+    if offset < 1: offset = 1
+
+    print("Loading files", end='')
+    for i in range(offset, pices + offset):
+        file = '{}/data/{}-{}.npy'.format(solution, name, i)
+        print("\rLoading {}-{}.npy {}".format(name, i, data if data is not None else ""), end='')
+        if data is None: data = np.load(file)
+        else: data = np.append(data, np.load(file), axis=0)
+    print("\nLoading finished")
+    
+    return data
+
 def SqlQueryExecute(solution, file, parameters, job):
     
-    query, parameters = GetQuery(solution, file, parameters)
+    path = "{}/{}.sql".format(solution, file)
+    query, parameters = LoadGuery(path, parameters)
 
     with GetConnection() as connection:
         with connection.cursor() as cursor:
@@ -83,14 +84,15 @@ def SqlQueryExecute(solution, file, parameters, job):
 
 def ReadPanda(file, parameters):
     
-    query, parameters = GetQuery("queries", file, parameters)
+    path = "queries/{}.sql".format(file)
+    query, parameters = LoadGuery(path, parameters)
 
     with GetConnection() as connection:
         return pd.read_sql(query, connection, params=parameters)
 
-def GetQuery(solution, file, parameters):
+def LoadGuery(path, parameters):
     
-    with open('{}/{}.sql'.format(solution, file), 'r') as content:
+    with open(path, 'r') as content:
         query = content.read()
 
     i = 0
@@ -104,16 +106,6 @@ def GetQuery(solution, file, parameters):
     
     return (query, params)
 
-def GetConnection():
-
-    info = LoadSetting("queries", "setting.json")
-
-    return sql.connect(
-        server = info['server'],
-        user = info['user'], 
-        password = info['password'], 
-        database = info['database'])
-
 def LoadOptions(solution, file):
     options = LoadSetting(solution, file)
     print("Options: ", options)
@@ -125,3 +117,13 @@ def LoadSetting(solution, file):
         info = json.load(content)
     
     return info
+
+def GetConnection():
+
+    info = LoadSetting("queries", "setting.json")
+
+    return sql.connect(
+        server = info['server'],
+        user = info['user'], 
+        password = info['password'], 
+        database = info['database'])

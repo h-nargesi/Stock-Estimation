@@ -27,15 +27,16 @@ class TradeReader:
 
     def ReadData(self, ignore_existing = False):
 
-        if ignore_existing == True:
-            if self.VERBOSE >= 1:
-                print("The data already have read. deleting data ...")
-            hd.ClearDataDirectory(self.Solution)
-        
-        elif ignore_existing == False and hd.DataExist(self.Solution):
-            if self.VERBOSE >= 1:
-                print("The data already have read.")
-            return
+        if hd.DataExist(self.Solution):
+            if ignore_existing == True:
+                if self.VERBOSE >= 1:
+                    print("The data already have read. deleting data ...")
+                hd.ClearDataDirectory(self.Solution)
+            
+            elif ignore_existing == False:
+                if self.VERBOSE >= 1:
+                    print("The data already have read.")
+                return
 
         if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
