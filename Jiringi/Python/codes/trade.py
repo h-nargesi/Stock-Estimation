@@ -106,7 +106,10 @@ class TradeReader:
             self.file_state = "\tfiles ({}) have been saved: {}{}".format(index, files_info, "" * 2)
     
     def __wait_all_tasks_finished(self):
+        leatest_file_state = self.file_state
         for task in self.saving_tasks:
             task.join()
-            print(self.finished_state, end='')
-            if self.file_state is not None: print(self.file_state, end='')
+            if leatest_file_state == self.file_state:
+                leatest_file_state = self.file_state
+                print(self.finished_state, end='')
+                if self.file_state is not None: print(self.file_state, end='')
