@@ -41,10 +41,9 @@ model.add(keras.layers.Flatten())
 
 model.add(keras.layers.Dense(60, activation="gelu"))
 model.add(keras.layers.Dropout(DROPOUPT_VALUE))
-model.add(keras.layers.Dense(OUTPUT_SIZE, activation="sigmoid"))
+model.add(keras.layers.Dense(OUTPUT_SIZE, activation="linear"))
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', 
-              metrics=['accuracy'])
+model.compile(loss='mean_absolute_error', optimizer='adam', metrics=['accuracy'])
 
 model.summary()
 
