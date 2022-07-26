@@ -18,17 +18,19 @@ def SaveFile(name, data):
     np.save('data/{}.npy'.format(name), data)
     return data.shape
 
-def LoadFile(name, splits = None):
+def LoadFile(name, pices = None, offset = 1):
     data = None
     
-    if splits is None:
+    if pices is None:
         print("Loading {}.npy".format(name), end='')
         data = np.load('data/{}.npy'.format(name))
         print("\r{}.npy was loaded".format(name))
         return data
     
+    if offset < 1: offset = 1
+
     print("Loading files", end='')
-    for i in range(1, splits):
+    for i in range(offset, pices + offset - 1):
         file = 'data/{}-{}.npy'.format(name, i)
         print("\rLoading {}-{}.npy".format(name, i), end='')
         if data is None: data = np.load(file)
