@@ -8,8 +8,8 @@ class TradeReader:
     y_training = list()
     saving_tasks = list()
     file_index = 0
-    message = None
-    finished = None
+    file_state = None
+    finished_state = None
 
     def __init__(self, input_size, output_size, batch_size, verbose = 2):
         self.INPUT_SIZE = input_size
@@ -53,9 +53,7 @@ class TradeReader:
 
             buffer.append(row[-1])
             if self.VERBOSE >= 2:
-                print("\rReading data: {}".format(row[0]), end='')
-                if self.message is not None:
-                    print("\t{}".format(self.message), end='')
+                print("\rReading data: {}\t{}".format(row[0], self.file_state), end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
 
@@ -67,22 +65,21 @@ class TradeReader:
         self.__save_and_reset()
 
         if self.VERBOSE >= 1:
-            self.finished = "\nReading finished in {0:.2f} sec and {1} files".format(
+            self.finished_state = "\nReading finished in {0:.2f} sec and {1} files".format(
                 time.time() - dur, self.file_index)
-            print(self.finished, end='')
-            if self.message is not None:
-                print("\t{}".format(self.message), end='')
+            print(self.finished_state, end='')
+            if self.file_state is not None:
+                print("\t{}".format(self.file_state), end='')
     
     def __save_and_reset(self):
         self.file_index += 1
 
         if self.VERBOSE >= 4:
-            self.message = None
             x_length = len(self.x_training)
             x_depth = len(self.x_training[0])
             y_length = len(self.y_training)
             y_depth = len(self.y_training[0])
-            self.message = "saving files ({}): x={}, y={}".format(
+            self.file_state = "saving files ({}): x={}, y={}".format(
                 self.file_index, (x_length, x_depth), (y_length, y_depth))
 
         args = [
@@ -101,16 +98,15 @@ class TradeReader:
             file["shape"] = hd.SaveFile(file["name"], file["data"])
         
         if self.VERBOSE >= 3:
-            self.message = None
             files_info = ""
             for file in files:
                 files_info += ", {}={}".format(file["key"], file["shape"])
             if len(files_info) > 0: files_info = files_info[2:]
-            self.message = "files ({}) have been saved: {}".format(index, files_info)
+            self.file_state = "files ({}) have been saved: {}".format(index, files_info)
     
     def __wait_all_tasks_finished(self):
         for task in self.saving_tasks:
             task.join()
-            print(self.finished, end='')
-            if self.message is not None:
-                print("\t{}".format(self.message), end='')
+            print(self.finished_state, end='')
+            if self.file_state is not None:
+                print("\t{}".format(self.file_state), end='')
