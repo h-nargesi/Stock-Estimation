@@ -51,7 +51,7 @@ class TradeReader:
                    len(self.x_training) + row[2] >= self.BATCH_SIZE:
                     self.__save_and_reset()
 
-            buffer.append(row[-1])
+            buffer.append(row[3:])
             if self.VERBOSE >= 2:
                 message = "\rReading data: {}".format(row[0])
                 if self.file_state is not None: message += self.file_state
@@ -76,12 +76,10 @@ class TradeReader:
         self.file_index += 1
 
         if self.VERBOSE >= 4:
-            x_length = len(self.x_training)
-            x_depth = len(self.x_training[0])
-            y_length = len(self.y_training)
-            y_depth = len(self.y_training[0])
+            x_shape = self.__get_shape(self.x_training)
+            y_shape = self.__get_shape(self.y_training)
             self.file_state = "\tsaving files ({}): x={}, y={}{}".format(
-                self.file_index, (x_length, x_depth), (y_length, y_depth), " " * 10)
+                self.file_index, x_shape, y_shape, " " * 10)
 
         args = [
             { "name": "trade-x-{}".format(self.file_index), "data": self.x_training, "key": "x" },
@@ -113,3 +111,15 @@ class TradeReader:
                 leatest_file_state = self.file_state
                 print(self.finished_state, end='')
                 if self.file_state is not None: print(self.file_state, end='')
+    
+    def __get_shape(slef, data):
+        dims = list()
+        
+        while type(data) == list or type(data) == tuple:
+            l = len(data)
+            dims.append(l)
+            if l > 0: data = data[0]
+            else: break
+
+        return tuple(dims)
+

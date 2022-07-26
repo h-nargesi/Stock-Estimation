@@ -3,23 +3,13 @@ declare @Minsize int = 310
 select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     , t.InstrumentID
     , c.Size
-    , CAST(CASE WHEN Increasing > 10 THEN 10 WHEN Increasing < -10 THEN -10 ELSE Increasing END AS FLOAT) as Increasing
-    --, CAST(Jalali / 10000 AS FLOAT) as Year
-    --, CAST(Jalali / 100 % 100 AS FLOAT) as Month
-    --, CAST(Jalali % 100 AS FLOAT) as Day
-    --, CAST(Week AS FLOAT) as Week
-	--, t.BuyerCount
-	--, t.OpenPrice
-	--, t.LowPrice
-	--, t.HighPrice
-	--, t.ClosePrice
-	--, t.RecordType
-	--, t.TradeCount
-	--, t.Volume
+    , CAST(CASE WHEN CloseIncreasing > 10 THEN 10 WHEN CloseIncreasing < -10 THEN -10 ELSE CloseIncreasing END AS FLOAT) as CloseIncreasing
+    --, CAST(CASE WHEN OpenIncreasing > 10 THEN 10 WHEN OpenIncreasing < -10 THEN -10 ELSE OpenIncreasing END AS FLOAT) as OpenIncreasing
 from (
     select InstrumentID, DateTimeEn
         , ROW_NUMBER() OVER(partition by InstrumentID order by DateTimeEn) as Ranking
-        , isnull(ClosePriceChange / ClosePrice, 0) as Increasing
+        , isnull(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
+        --, (OpenPrice - lag(OpenPrice) over(partition by InstrumentID order by DateTimeEn)) / OpenPrice as OpenIncreasing
 		--, Trade.BuyerCount
 		--, Trade.OpenPrice
 		--, Trade.LowPrice
