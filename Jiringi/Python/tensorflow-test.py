@@ -1,58 +1,33 @@
-# import tensorflow as tf
-import codes.handlers as hd
-import keras
 from keras.callbacks import ModelCheckpoint
+import codes.handlers as hd
+import codes.trade as trade
+import solution_1.model as modeling
 
-x_training = hd.LoadFile('trade-x', 4)
-y_training = hd.LoadFile('trade-y', 4)
+# Data
+if not hd.DataExist(modeling.GetName()):
+    options = hd.LoadOptions(modeling.GetName(), "options.json")
+    loader = trade.TradeReader(*options, verbose=4)
+    loader.ReadData(ignore_existing=True)
 
-x_testing = hd.LoadFile('trade-x', 1, 5)
-y_testing = hd.LoadFile('trade-y', 1, 5)
+x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1)
 
-print("x_training.shape:", x_training.shape)
-print("y_training.shape:", y_training.shape)
+# Model
+model = modeling.GetModel(x_training.shape[1:], y_training[-1])
 
-print("x_testing.shape:", x_testing.shape)
-print("y_testing.shape:", y_testing.shape)
+check_point_path = "{}/model".format(modeling.GetName())
 
-# # Create TensorFlow object called hello_constant
-# hello_constant = tf.constant('Hello World!')
+if hd.ModelExist(modeling.GetName()):
+    model.load_weights(check_point_path)
 
-# with tf.Session() as sess:
-#     # Run the tf.constant operation in the session
-#     output = sess.run(hello_constant)
-#     print(output)
+checkpointer = ModelCheckpoint(filepath=check_point_path, verbose=1, save_best_only=True)
+checkpointer.load_weights_on_restart = True
 
-INPUT_SIZE = 300
-OUTPUT_SIZE = 10
-DROPOUPT_VALUE = 0.2
+# Test
+score = model.evaluate(x_testing, y_testing, verbose=1)
+accuracy = 100 * score[1]
+print('Test accuracy: %.4f%%' % accuracy)
 
-model = keras.models.Sequential(name='logits')
-model.add(keras.Input(shape=(INPUT_SIZE, 1, 1)))
-
-model.add(keras.layers.Conv2D(3, (10, 1), strides=(2, 1), activation='gelu'))
-model.add(keras.layers.Dropout(DROPOUPT_VALUE))
-model.add(keras.layers.Conv2D(6, (10, 1), strides=(1, 1), activation='gelu'))
-model.add(keras.layers.Dropout(DROPOUPT_VALUE))
-model.add(keras.layers.Conv2D(9, (5, 1), strides=(1, 1), activation='gelu'))
-model.add(keras.layers.Dropout(DROPOUPT_VALUE))
-
-model.add(keras.layers.Flatten())
-
-model.add(keras.layers.Dense(60, activation="gelu"))
-model.add(keras.layers.Dropout(DROPOUPT_VALUE))
-model.add(keras.layers.Dense(OUTPUT_SIZE, activation="linear"))
-
-model.compile(loss='mean_absolute_error', optimizer='adam', metrics=['accuracy'])
-
-model.summary()
-
-check_point_path = 'models/trade-ver-1'
-
-# train the model
-checkpointer = ModelCheckpoint(filepath=check_point_path, 
-                               verbose=1, save_best_only=True)
-
-hist = model.fit(x_training, y_training, batch_size=512, epochs=10,
+# Train
+hist = model.fit(x_training, y_training, batch_size=1024, epochs=10,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)

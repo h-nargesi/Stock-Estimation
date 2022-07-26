@@ -6,25 +6,38 @@ import re
 import os
 import shutil
 
-def DataExist():
-    return os.path.isdir('data/')
+def ModelExist(solution):
+    return os.path.isdir('{}/model/'.format(solution))
 
-def ClearDataDirectory():
-    if os.path.isdir('data/'):
-        shutil.rmtree('data/')
+def DataExist(solution):
+    return os.path.isdir('{}/data/'.format(solution))
 
-def SaveFile(name, data):
-    os.makedirs('data/', exist_ok=True)
+def ClearDataDirectory(solution):
+    if DataExist(solution):
+        shutil.rmtree('{}/data/'.format(solution))
+
+def SaveFile(solution, name, data):
+    os.makedirs('{}/data/'.format(solution), exist_ok=True)
     data = np.array(data)
-    np.save('data/{}.npy'.format(name), data)
+    np.save('{}/data/{}.npy'.format(solution, name), data)
     return data.shape
 
-def LoadFile(name, pices = None, offset = 1):
+def GetFilesCount(solution):
+    if not DataExist(solution): return 0
+
+    dir_path = '{}/data/'.format(solution)
+    count = 0
+    for path in os.listdir(dir_path):
+        if os.path.isfile(os.path.join(dir_path, path)):
+            count += 1
+    return count
+
+def LoadFile(solution, name, pices = None, offset = 1):
     data = None
     
     if pices is None:
         print("Loading {}.npy".format(name), end='')
-        data = np.load('data/{}.npy'.format(name))
+        data = np.load('{}/data/{}.npy'.format(solution, name))
         print("\r{}.npy was loaded".format(name))
         return data
     
@@ -32,7 +45,7 @@ def LoadFile(name, pices = None, offset = 1):
 
     print("Loading files", end='')
     for i in range(offset, pices + offset):
-        file = 'data/{}-{}.npy'.format(name, i)
+        file = '{}/data/{}-{}.npy'.format(solution, name, i)
         print("\rLoading {}-{}.npy".format(name, i), end='')
         if data is None: data = np.load(file)
         else: data = np.append(data, np.load(file), axis=0)
@@ -40,9 +53,28 @@ def LoadFile(name, pices = None, offset = 1):
     
     return data
 
-def SqlQueryExecute(file, parameters, job):
+def LoadData(solution, test_count):
+    total = GetFilesCount()
+
+    if total < 0: raise "Data have not read yet."
+
+    x_training = LoadFile(solution, 'trade-x', total - test_count)
+    y_training = LoadFile(solution, 'trade-y', total - test_count)
+
+    x_testing = LoadFile(solution, 'trade-x', test_count, total)
+    y_testing = LoadFile(solution, 'trade-y', test_count, total)
+
+    print("x_training.shape:", x_training.shape)
+    print("y_training.shape:", y_training.shape)
+
+    print("x_testing.shape:", x_testing.shape)
+    print("y_testing.shape:", y_testing.shape)
+
+    return (x_training, y_training, x_testing, y_testing)
+
+def SqlQueryExecute(solution, file, parameters, job):
     
-    query, parameters = GetQuery(file, parameters)
+    query, parameters = GetQuery(solution, file, parameters)
 
     with GetConnection() as connection:
         with connection.cursor() as cursor:
@@ -51,14 +83,14 @@ def SqlQueryExecute(file, parameters, job):
 
 def ReadPanda(file, parameters):
     
-    query, parameters = GetQuery(file, parameters)
+    query, parameters = GetQuery("queries", file, parameters)
 
     with GetConnection() as connection:
         return pd.read_sql(query, connection, params=parameters)
 
-def GetQuery(file, parameters):
+def GetQuery(solution, file, parameters):
     
-    with open('queries/{}.sql'.format(file), 'r') as content:
+    with open('{}/{}.sql'.format(solution, file), 'r') as content:
         query = content.read()
 
     i = 0
@@ -74,11 +106,22 @@ def GetQuery(file, parameters):
 
 def GetConnection():
 
-    with open('queries/setting.json', 'r') as content:
-        info = json.load(content)
+    info = LoadSetting("queries", "setting.json")
 
     return sql.connect(
         server = info['server'],
         user = info['user'], 
         password = info['password'], 
         database = info['database'])
+
+def LoadOptions(solution, file):
+    options = LoadSetting(solution, file)
+    print("Options: ", options)
+    return (solution, options["Input Size"], options["Output Size"][0], options["Output Size"][1], options["Batch Count"])
+
+def LoadSetting(solution, file):
+
+    with open("{}/{}".format(solution, file), 'r') as content:
+        info = json.load(content)
+    
+    return info

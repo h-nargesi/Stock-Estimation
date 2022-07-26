@@ -1,4 +1,4 @@
 *.npy
 */setting.json
 
-models/*
+solution_*/model/*

@@ -4,17 +4,24 @@ from threading import Thread
 
 class TradeReader:
 
-    x_training = list()
-    y_training = list()
-    saving_tasks = list()
-    total_count = 0
-    file_index = 0
-    file_state = None
-    finished_state = None
+    Shapes = None
+    TotalCount = 0
+    Solution = None
+    QueryName = 'query'
+    CountingName = 'counting'
 
-    def __init__(self, input_size, output_size, batch_count, verbose = 3):
+    __x_training = list()
+    __y_training = list()
+    __saving_tasks = list()
+    __file_index = 0
+    __file_state = None
+    __finished_state = None
+
+    def __init__(self, solution, input_size, output_size, output_gaps, batch_count = 5, verbose = 3):
+        self.Solution = solution
         self.INPUT_SIZE = input_size
-        self.BUFFER_SIZE = input_size + output_size
+        self.OUTPUT_GAPS = output_gaps
+        self.BUFFER_SIZE = input_size + output_size * (output_gaps + 1)
         self.BATCH_COUNT = batch_count
         self.VERBOSE = verbose
 
@@ -23,9 +30,9 @@ class TradeReader:
         if ignore_existing == True:
             if self.VERBOSE >= 1:
                 print("The data already have read. deleting data ...")
-            hd.ClearDataDirectory()
+            hd.ClearDataDirectory(self.Solution)
         
-        elif ignore_existing == False and hd.DataExist():
+        elif ignore_existing == False and hd.DataExist(self.Solution):
             if self.VERBOSE >= 1:
                 print("The data already have read.")
             return
@@ -33,19 +40,16 @@ class TradeReader:
         if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
 
-        hd.SqlQueryExecute('trade-counting', (self.BUFFER_SIZE, ), self.__fetch_count)
-        hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
+        hd.SqlQueryExecute(self.Solution, self.CountingName, (self.BUFFER_SIZE, ), self.__fetch_count)
+        hd.SqlQueryExecute(self.Solution, self.QueryName, (self.BUFFER_SIZE, ), self.__data_handler)
         
         self.__wait_all_tasks_finished()
         print()
 
     def __fetch_count(self, cursor):
-        total_count = 1
-        for row in cursor:
-            self.total_count = row[0]
-            break
-        if total_count < 1: total_count = 1
-        self.BATCH_SIZE = self.total_count / self.BATCH_COUNT
+        self.TotalCount = cursor.fetchone()[0]
+        if self.TotalCount < 1: self.TotalCount = 1
+        self.BATCH_SIZE = self.TotalCount / self.BATCH_COUNT
     
     def __data_handler(self, cursor):
         instrument = None
@@ -57,71 +61,93 @@ class TradeReader:
                 instrument = row[1]
                 buffer.clear()
 
-                if len(self.x_training) >= 0 and self.file_index + 1 < self.BATCH_COUNT and \
-                   len(self.x_training) + row[2] >= self.BATCH_SIZE:
+                if len(self.__x_training) >= 0 and self.__file_index + 1 < self.BATCH_COUNT and \
+                   len(self.__x_training) + row[2] >= self.BATCH_SIZE:
                     self.__save_and_reset()
 
             buffer.append(row[3:])
             if self.VERBOSE >= 2:
-                percent = 100.0 * row[0] / self.total_count
+                percent = 100.0 * row[0] / self.TotalCount
                 message = "\rReading data: {0:.2f}%".format(percent)
-                if self.file_state is not None: message += self.file_state
+                if self.__file_state is not None: message += self.__file_state
                 print(message, end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
 
-            self.x_training.append(buffer[:self.INPUT_SIZE])
-            self.y_training.append([b[0] for b in buffer[self.INPUT_SIZE:]])
+            self.__x_training.append(buffer[:self.INPUT_SIZE])
+            self.__y_training.append(self.__generate_output(buffer[self.INPUT_SIZE:]))
 
             buffer.pop()
 
         self.__save_and_reset()
 
         if self.VERBOSE >= 1:
-            self.finished_state = "\nReading finished in {0:.2f} sec and {1} files".format(
-                time.time() - dur, self.file_index)
-            print(self.finished_state, end='')
-            if self.file_state is not None: print(self.file_state, end='')
+            self.__finished_state = "\nReading finished in {0:.2f} sec and {1} files".format(
+                time.time() - dur, self.__file_index)
+            print(self.__finished_state, end='')
+            if self.__file_state is not None: print(self.__file_state, end='')
+    
+    def __generate_output(self, data):
+        output = list()
+        acc = 0
+        moves = 0
+        for d in data:
+            acc = acc + d[0] - acc * d[0]
+            
+            if moves >= self.OUTPUT_GAPS:
+                output.append(acc)
+                moves = 0
+            else: moves += 1
+
+        if moves > 0: output.append(acc)
+        
+        return output
     
     def __save_and_reset(self):
-        self.file_index += 1
+        self.__file_index += 1
 
         if self.VERBOSE >= 4:
-            x_shape = self.__get_shape(self.x_training)
-            y_shape = self.__get_shape(self.y_training)
-            self.file_state = "\tsaving files ({}): x={}, y={}{}".format(
-                self.file_index, x_shape, y_shape, " " * 10)
+            x_shape = self.__get_shape(self.__x_training)
+            y_shape = self.__get_shape(self.__y_training)
+            self.__file_state = "\tsaving files ({}): x={}, y={}{}".format(
+                self.__file_index, x_shape, y_shape, " " * 10)
 
         args = [
-            { "name": "trade-x-{}".format(self.file_index), "data": self.x_training, "key": "x" },
-            { "name": "trade-y-{}".format(self.file_index), "data": self.y_training, "key": "y" }
+            { "name": "trade-x-{}".format(self.__file_index), "data": self.__x_training, "key": "x" },
+            { "name": "trade-y-{}".format(self.__file_index), "data": self.__y_training, "key": "y" }
         ]
-        saving_task = Thread(target=self.__convert_and_save, args=(args, self.file_index, ))
-        self.saving_tasks.append(saving_task)
+        saving_task = Thread(target=self.__convert_and_save, args=(args, self.__file_index, ))
+        self.__saving_tasks.append(saving_task)
         saving_task.start()
 
-        self.x_training = list()
-        self.y_training = list()
+        self.__x_training = list()
+        self.__y_training = list()
         
     def __convert_and_save(self, files, index):
+        loading_shapes = False
+        if self.Shapes is None:
+            loading_shapes = True
+            self.Shapes = dict()
+
         for file in files:
-            file["shape"] = hd.SaveFile(file["name"], file["data"])
+            file["shape"] = hd.SaveFile(self.Solution, file["name"], file["data"])
+            if loading_shapes: self.Shapes[file["key"]] = file["shape"]
         
         if self.VERBOSE >= 3:
             files_info = ""
             for file in files:
                 files_info += ", {}={}".format(file["key"], file["shape"])
             if len(files_info) > 0: files_info = files_info[2:]
-            self.file_state = "\tfiles ({}) have been saved: {}{}".format(index, files_info, "" * 2)
+            self.__file_state = "\tfiles ({}) have been saved: {}{}".format(index, files_info, "" * 2)
     
     def __wait_all_tasks_finished(self):
-        leatest_file_state = self.file_state
-        for task in self.saving_tasks:
+        leatest_file_state = self.__file_state
+        for task in self.__saving_tasks:
             task.join()
-            if leatest_file_state != self.file_state:
-                leatest_file_state = self.file_state
-                print(self.finished_state, end='')
-                if self.file_state is not None: print(self.file_state, end='')
+            if leatest_file_state != self.__file_state:
+                leatest_file_state = self.__file_state
+                print(self.__finished_state, end='')
+                if self.__file_state is not None: print(self.__file_state, end='')
     
     def __get_shape(slef, data):
         dims = list()
