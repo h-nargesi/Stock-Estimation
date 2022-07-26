@@ -10,7 +10,8 @@ def DataExist():
     return os.path.isdir('data/')
 
 def ClearDataDirectory():
-    shutil.rmtree('data/')
+    if os.path.isdir('data/'):
+        shutil.rmtree('data/')
 
 def SaveFile(name, data):
     os.makedirs('data/', exist_ok=True)
