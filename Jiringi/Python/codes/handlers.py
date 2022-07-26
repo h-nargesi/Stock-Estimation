@@ -31,11 +31,11 @@ def LoadFile(name, pices = None, offset = 1):
     if offset < 1: offset = 1
 
     print("Loading files", end='')
-    for i in range(offset, pices + offset - 1):
+    for i in range(offset, pices + offset):
         file = 'data/{}-{}.npy'.format(name, i)
         print("\rLoading {}-{}.npy".format(name, i), end='')
         if data is None: data = np.load(file)
-        else: data = np.append(data, np.load(file))
+        else: data = np.append(data, np.load(file), axis=0)
     print("\nLoading finished")
     
     return data
