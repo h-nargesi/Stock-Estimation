@@ -53,7 +53,9 @@ class TradeReader:
 
             buffer.append(row[-1])
             if self.VERBOSE >= 2:
-                print("\rReading data: {}\t{}".format(row[0], self.file_state), end='')
+                message = "\rReading data: {}".format(row[0])
+                if self.file_state is not None: message += self.file_state
+                print(message, end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
 
@@ -68,8 +70,7 @@ class TradeReader:
             self.finished_state = "\nReading finished in {0:.2f} sec and {1} files".format(
                 time.time() - dur, self.file_index)
             print(self.finished_state, end='')
-            if self.file_state is not None:
-                print("\t{}".format(self.file_state), end='')
+            if self.file_state is not None: print(self.file_state, end='')
     
     def __save_and_reset(self):
         self.file_index += 1
@@ -79,8 +80,8 @@ class TradeReader:
             x_depth = len(self.x_training[0])
             y_length = len(self.y_training)
             y_depth = len(self.y_training[0])
-            self.file_state = "saving files ({}): x={}, y={}".format(
-                self.file_index, (x_length, x_depth), (y_length, y_depth))
+            self.file_state = "\tsaving files ({}): x={}, y={}{}".format(
+                self.file_index, (x_length, x_depth), (y_length, y_depth), " " * 10)
 
         args = [
             { "name": "trade-x-{}".format(self.file_index), "data": self.x_training, "key": "x" },
@@ -102,11 +103,10 @@ class TradeReader:
             for file in files:
                 files_info += ", {}={}".format(file["key"], file["shape"])
             if len(files_info) > 0: files_info = files_info[2:]
-            self.file_state = "files ({}) have been saved: {}".format(index, files_info)
+            self.file_state = "\tfiles ({}) have been saved: {}{}".format(index, files_info, "" * 2)
     
     def __wait_all_tasks_finished(self):
         for task in self.saving_tasks:
             task.join()
             print(self.finished_state, end='')
-            if self.file_state is not None:
-                print("\t{}".format(self.file_state), end='')
+            if self.file_state is not None: print(self.file_state, end='')
