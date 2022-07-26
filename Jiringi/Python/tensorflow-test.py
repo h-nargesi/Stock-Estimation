@@ -4,15 +4,14 @@ import codes.trade as trade
 import solution_1.model as modeling
 
 # Data
-if not hd.DataExist(modeling.GetName()):
-    options = hd.LoadOptions(modeling.GetName(), "options.json")
-    loader = trade.TradeReader(*options, verbose=4)
-    loader.ReadData(ignore_existing=True)
+options = hd.LoadOptions(modeling.GetName(), "options.json")
+loader = trade.TradeReader(*options, verbose=4)
+loader.ReadData(ignore_existing=False)
 
 x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1)
 
 # Model
-model = modeling.GetModel(x_training.shape[1:], y_training[-1])
+model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
 check_point_path = "{}/model".format(modeling.GetName())
 

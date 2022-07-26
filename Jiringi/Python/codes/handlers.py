@@ -33,7 +33,7 @@ def DataExist(solution):
     return os.path.isdir('{}/data/'.format(solution))
 
 def LoadData(solution, test_count):
-    total = GetFilesCount(solution)
+    total = int(GetFilesCount(solution) / 2)
 
     if total < 0: raise "Data have not read yet."
 
