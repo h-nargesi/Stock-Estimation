@@ -3,6 +3,7 @@ import keras
 def GetName(): return "solution_1"
 
 def GetModel(input_shape, output_size):
+    print("Model: {} -> {}".format(input_shape, output_size))
     DROPOUPT_VALUE = 0.3
 
     model = keras.models.Sequential(name='logits')

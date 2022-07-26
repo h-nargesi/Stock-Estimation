@@ -54,7 +54,7 @@ def LoadFile(solution, name, pices = None, offset = 1):
     return data
 
 def LoadData(solution, test_count):
-    total = GetFilesCount()
+    total = int(GetFilesCount(solution) / 2)
 
     if total < 0: raise "Data have not read yet."
 
