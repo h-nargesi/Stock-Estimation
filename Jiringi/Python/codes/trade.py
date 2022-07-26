@@ -8,6 +8,8 @@ class TradeReader:
     y_training = list()
     saving_tasks = list()
     file_index = 0
+    message = None
+    finished = None
 
     def __init__(self, input_size, output_size, batch_size, verbose = 2):
         self.INPUT_SIZE = input_size
@@ -30,6 +32,7 @@ class TradeReader:
         hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
         
         self.__wait_all_tasks_finished()
+        print()
 
     def __data_handler(self, cursor):
         instrument = None
@@ -50,7 +53,9 @@ class TradeReader:
 
             buffer.append(row[-1])
             if self.VERBOSE >= 2:
-                print("\rReading data: {}".format(row[0], self.file_index), end='')
+                print("\rReading data: {}\t{}".format(row[0]), end='')
+                if self.message is not None:
+                    print("\t{}".format(self.message), end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
 
@@ -62,8 +67,11 @@ class TradeReader:
         self.__save_and_reset()
 
         if self.VERBOSE >= 1:
-            print("\nReading finished in {0:.2f} sec and {1} files".format(
-                time.time() - dur, self.file_index))
+            self.finished = "\nReading finished in {0:.2f} sec and {1} files".format(
+                time.time() - dur, self.file_index)
+            print(self.finished, end='')
+            if self.message is not None:
+                print("\t{}".format(self.message), end='')
     
     def __save_and_reset(self):
         self.file_index += 1
@@ -73,21 +81,21 @@ class TradeReader:
             x_depth = len(self.x_training[0])
             y_length = len(self.y_training)
             y_depth = len(self.y_training[0])
-            print("\nSaving file: {} with shape: x={}, y={}".format(
-                self.file_index, (x_length, x_depth), (y_length, y_depth)))
+            self.message = "saving file: {} with shape: x={}, y={}".format(
+                self.file_index, (x_length, x_depth), (y_length, y_depth))
 
         args = [
             { "name": "trade-x-{}".format(self.file_index), "data": self.x_training },
             { "name": "trade-y-{}".format(self.file_index), "data": self.y_training }
         ]
-        saving_task = Thread(target=self.__convert_and_save, args=(args, ))
+        saving_task = Thread(target=self.__convert_and_save, args=(args, self.file_index, ))
         self.saving_tasks.append(saving_task)
         saving_task.start()
 
         self.x_training = list()
         self.y_training = list()
         
-    def __convert_and_save(self, files):
+    def __convert_and_save(self, files, index):
         for file in files:
             file["shape"] = hd.SaveFile(file["name"], file["data"])
         
@@ -96,7 +104,11 @@ class TradeReader:
             for file in files:
                 message += ", {}:{}".format(file["name"], file["shape"])
             if len(message) > 0: message = message[2:]
-            print("\nFiles was saved:", message)
+            self.message = "files ({}) was saved: {}".format(index, message)
     
     def __wait_all_tasks_finished(self):
-        for task in self.saving_tasks: task.join()
+        for task in self.saving_tasks:
+            task.join()
+            print(self.finished, end='')
+            if self.message is not None:
+                print("\t{}".format(self.message), end='')
