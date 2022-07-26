@@ -8,16 +8,31 @@ select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     --, CAST(Jalali / 100 % 100 AS FLOAT) as Month
     --, CAST(Jalali % 100 AS FLOAT) as Day
     --, CAST(Week AS FLOAT) as Week
+	--, t.BuyerCount
+	--, t.OpenPrice
+	--, t.LowPrice
+	--, t.HighPrice
+	--, t.ClosePrice
+	--, t.RecordType
+	--, t.TradeCount
+	--, t.Volume
 from (
-    select InstrumentID
+    select InstrumentID, DateTimeEn
         , ROW_NUMBER() OVER(partition by InstrumentID order by DateTimeEn) as Ranking
-        , (ClosePrice - lag(ClosePrice) over(partition by InstrumentID order by DateTimeEn)) / ClosePrice as Increasing
+        , isnull(ClosePriceChange / ClosePrice, 0) as Increasing
+		--, Trade.BuyerCount
+		--, Trade.OpenPrice
+		--, Trade.LowPrice
+		--, Trade.HighPrice
+		--, Trade.ClosePrice
+		--, Trade.RecordType
+		--, Trade.TradeCount
+		--, Trade.Volume
         --, CASE
         --   WHEN Trade.DateTime IS NULL THEN dbo.jalali(DateTimeEn)
         --   ELSE CAST(REPLACE(Trade.DateTime, '/', '') AS INT)
         --   END as Jalali
         --, DATEPART(weekday, DateTimeEn) as Week
-        , DateTimeEn
     from Trade
 ) t
 join (
