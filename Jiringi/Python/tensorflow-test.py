@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 import codes.handlers as hd
 
 x_training = hd.LoadFile('trade-x', 4)
@@ -13,10 +13,10 @@ print("y_training.shape:", y_training.shape)
 print("x_testing.shape:", x_testing.shape)
 print("y_testing.shape:", y_testing.shape)
 
-# Create TensorFlow object called hello_constant
-hello_constant = tf.constant('Hello World!')
+# # Create TensorFlow object called hello_constant
+# hello_constant = tf.constant('Hello World!')
 
-with tf.Session() as sess:
-    # Run the tf.constant operation in the session
-    output = sess.run(hello_constant)
-    print(output)
+# with tf.Session() as sess:
+#     # Run the tf.constant operation in the session
+#     output = sess.run(hello_constant)
+#     print(output)

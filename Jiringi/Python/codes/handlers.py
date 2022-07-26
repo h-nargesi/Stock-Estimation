@@ -69,7 +69,7 @@ def GetQuery(file, parameters):
         i += 1
     
     query = re.sub('(@(\w+)\s+\w+\s*=\s*)[^\r\n,]*(,?)', '\\1%(\\2)d\\3', query)
-
+    
     return (query, params)
 
 def GetConnection():

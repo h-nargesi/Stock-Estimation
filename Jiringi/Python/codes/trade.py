@@ -7,14 +7,15 @@ class TradeReader:
     x_training = list()
     y_training = list()
     saving_tasks = list()
+    total_count = 0
     file_index = 0
     file_state = None
     finished_state = None
 
-    def __init__(self, input_size, output_size, batch_size, verbose = 2):
+    def __init__(self, input_size, output_size, batch_count, verbose = 3):
         self.INPUT_SIZE = input_size
         self.BUFFER_SIZE = input_size + output_size
-        self.BATCH_SIZE = batch_size
+        self.BATCH_COUNT = batch_count
         self.VERBOSE = verbose
 
     def ReadData(self, ignore_existing = False):
@@ -29,38 +30,48 @@ class TradeReader:
                 print("The data already have read.")
             return
 
+        if self.VERBOSE >= 1:
+            print("Reading data: ...", end='')
+
+        hd.SqlQueryExecute('trade-counting', (self.BUFFER_SIZE, ), self.__fetch_count)
         hd.SqlQueryExecute('trade-selection', (self.BUFFER_SIZE, ), self.__data_handler)
         
         self.__wait_all_tasks_finished()
         print()
 
+    def __fetch_count(self, cursor):
+        total_count = 1
+        for row in cursor:
+            self.total_count = row[0]
+            break
+        if total_count < 1: total_count = 1
+        self.BATCH_SIZE = self.total_count / self.BATCH_COUNT
+    
     def __data_handler(self, cursor):
         instrument = None
         buffer = list()
         
-        if self.VERBOSE >= 1:
-            print("Reading data: ...", end='')
-
         dur = time.time()
         for row in cursor:
             if instrument != row[1]:
                 instrument = row[1]
                 buffer.clear()
 
-                if len(self.x_training) >= 0 and \
+                if len(self.x_training) >= 0 and self.file_index + 1 < self.BATCH_COUNT and \
                    len(self.x_training) + row[2] >= self.BATCH_SIZE:
                     self.__save_and_reset()
 
             buffer.append(row[3:])
             if self.VERBOSE >= 2:
-                message = "\rReading data: {}".format(row[0])
+                percent = 100.0 * row[0] / self.total_count
+                message = "\rReading data: {0:.2f}%".format(percent)
                 if self.file_state is not None: message += self.file_state
                 print(message, end='')
 
             if len(buffer) < self.BUFFER_SIZE: continue
 
             self.x_training.append(buffer[:self.INPUT_SIZE])
-            self.y_training.append(buffer[self.INPUT_SIZE:])
+            self.y_training.append([b[0] for b in buffer[self.INPUT_SIZE:]])
 
             buffer.pop()
 
