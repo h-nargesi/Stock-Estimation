@@ -109,7 +109,7 @@ class TradeReader:
         leatest_file_state = self.file_state
         for task in self.saving_tasks:
             task.join()
-            if leatest_file_state == self.file_state:
+            if leatest_file_state != self.file_state:
                 leatest_file_state = self.file_state
                 print(self.finished_state, end='')
                 if self.file_state is not None: print(self.file_state, end='')
