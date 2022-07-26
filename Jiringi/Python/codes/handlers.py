@@ -65,10 +65,11 @@ def LoadFile(solution, name, pices = None, offset = 1):
     print("Loading files", end='')
     for i in range(offset, pices + offset):
         file = '{}/data/{}-{}.npy'.format(solution, name, i)
-        print("\rLoading {}-{}.npy {}".format(name, i, data if data is not None else ""), end='')
+        print("\nLoading {}-{}.npy ".format(name, i), end='')
         if data is None: data = np.load(file)
         else: data = np.append(data, np.load(file), axis=0)
-    print("\nLoading finished")
+        print(data.shape)
+    print("Loading finished")
     
     return data
 

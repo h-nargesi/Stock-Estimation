@@ -1,4 +1,6 @@
 import time
+
+from numpy import record
 import codes.handlers as hd
 from threading import Thread
 
@@ -66,7 +68,10 @@ class TradeReader:
                    len(self.__x_training) + row[2] >= self.BATCH_SIZE:
                     self.__save_and_reset()
 
-            buffer.append(row[3:])
+            record = list()
+            record.append(row[3:])
+
+            buffer.append(record)
             if self.VERBOSE >= 2:
                 percent = 100.0 * row[0] / self.TotalCount
                 message = "\rReading data: {0:.2f}%".format(percent)
@@ -90,10 +95,10 @@ class TradeReader:
     
     def __generate_output(self, data):
         output = list()
-        acc = 0
+        acc = 0.0
         moves = 0
         for d in data:
-            acc = acc + d[0] - acc * d[0]
+            acc = acc + d[0][0] - acc * d[0][0]
             
             if moves >= self.OUTPUT_GAPS:
                 output.append(acc)
