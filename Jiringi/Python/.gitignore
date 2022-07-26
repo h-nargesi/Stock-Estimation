@@ -1,4 +1,4 @@
 *.npy
 */setting.json
 
-*/models/*
+models/*
