@@ -7,7 +7,7 @@ select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
 from (
     select Trade.InstrumentID, RowCounts, DateTimeEn
         , ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as Ranking
-        , ClosePriceChange / ClosePrice as CloseIncreasing
+        , ISNULL(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
     from Trade
 	join (
 		select InstrumentID, RowCounts
