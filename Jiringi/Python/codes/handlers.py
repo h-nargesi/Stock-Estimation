@@ -80,7 +80,7 @@ def SqlQueryExecute(solution, file, parameters, job):
             cursor.execute(query, parameters)
             job(cursor)
 
-def ReadPanda(file, parameters):
+def ReadPanda(file, parameters=None):
     
     path = "queries/{}.sql".format(file)
     query, parameters = LoadGuery(path, parameters)
