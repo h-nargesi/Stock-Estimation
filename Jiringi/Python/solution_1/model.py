@@ -6,7 +6,7 @@ def GetModel(input_shape, output_size):
     print("Model: {} -> {}".format(input_shape, output_size))
     DROPOUPT_VALUE = 0.3
 
-    model = keras.models.Sequential(name='logits')
+    model = keras.models.Sequential(name=GetName())
     model.add(keras.Input(shape=input_shape))
 
     model.add(keras.layers.Conv2D(10, (30, 1), strides=(2, 1), activation='gelu'))
