@@ -88,9 +88,9 @@ class TradeReader:
         self.__save_and_reset()
 
         if self.VERBOSE >= 1:
-            self.__finished_state = "\nReading finished in {0:.2f} sec and {1} files".format(
+            self.__finished_state = "\rReading finished in {0:.2f} sec and {1} files".format(
                 time.time() - dur, self.__file_index)
-            print(self.__finished_state, end='')
+            print("\n" + self.__finished_state, end='')
             if self.__file_state is not None: print(self.__file_state, end='')
     
     def __generate_output(self, data):
