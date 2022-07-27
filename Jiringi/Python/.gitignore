@@ -1,4 +1,3 @@
 *.npy
+*.hdf5
 */setting.json
-
-solution_*/model/*
