@@ -1,10 +1,11 @@
-﻿declare @InstrumentIDs varchar(max) = '13',
+declare @InstrumentIDs varchar(max) = '13',
 		@Zoom int = 5,
         @Offset int = 0,
         @Count int = 1000
 
-select InstrumentID
+select InstrumentID, DateTimeEn, RowCounts, Duration
 	 , CASE Duration WHEN 0 THEN 0 ELSE CAST(RowCounts AS FLOAT) / CAST(Duration AS FLOAT) END AS Density
+	 , ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) as GroupingValue
 from (
 	select InstrumentID
 		 , COUNT(1) AS RowCounts

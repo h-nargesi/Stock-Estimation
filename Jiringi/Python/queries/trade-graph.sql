@@ -1,7 +1,7 @@
 declare @InstrumentIDs varchar(max) = '13',
-		@Zoom int = 5,
+		@Zoom int = 10,
         @Offset int = 0,
-        @Count int = 1000
+        @Count int = 400
 
 select InstrumentID
 	 , MAX(t.DateTimeEn) as DateTimeEn
