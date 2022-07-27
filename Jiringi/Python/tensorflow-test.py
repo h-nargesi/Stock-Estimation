@@ -1,7 +1,7 @@
 from keras.callbacks import ModelCheckpoint
 import codes.handlers as hd
 import codes.trade as trade
-import solution_1.model as modeling
+import solution_1_simple.model as modeling
 
 print()
 print("[{}]".format(modeling.GetName().replace('_', '-')))
@@ -18,7 +18,7 @@ x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1
 print("\n# Modeling\n")
 model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
-check_point_path = "{}/model".format(modeling.GetName())
+check_point_path = "{}/model.hdf5".format(modeling.GetName())
 
 if hd.ModelExist(modeling.GetName()):
     model.load_weights(check_point_path)

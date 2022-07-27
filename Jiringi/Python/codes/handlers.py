@@ -27,7 +27,7 @@ def GetFilesCount(solution):
     return count
 
 def ModelExist(solution):
-    return os.path.isdir('{}/model/'.format(solution))
+    return os.path.isfile("{}/model.hdf5".format(solution))
 
 def DataExist(solution):
     return os.path.isdir('{}/data/'.format(solution))
