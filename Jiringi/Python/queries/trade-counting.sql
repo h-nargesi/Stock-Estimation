@@ -1,4 +1,4 @@
-declare @Minsize int = 310
+declare @Minsize int = 265
 
 select sum(Size) as Size
 from (
