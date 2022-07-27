@@ -43,11 +43,8 @@ def LoadData(solution, test_count):
     x_testing = LoadFile(solution, 'trade-x', test_count, total)
     y_testing = LoadFile(solution, 'trade-y', test_count, total)
 
-    print("x_training.shape:", x_training.shape)
-    print("y_training.shape:", y_training.shape)
-
-    print("x_testing.shape:", x_testing.shape)
-    print("y_testing.shape:", y_testing.shape)
+    print("training.shapes: x{}, y{}".format(x_training.shape, y_training.shape))
+    print("testing.shapes: x{}, y{}".format(x_testing.shape, y_testing.shape))
 
     return (x_training, y_training, x_testing, y_testing)
 
@@ -65,11 +62,11 @@ def LoadFile(solution, name, pices = None, offset = 1):
     print("Loading files", end='')
     for i in range(offset, pices + offset):
         file = '{}/data/{}-{}.npy'.format(solution, name, i)
-        print("Loading {}-{}.npy ".format(name, i), end='')
+        print("\rLoading {}-{}.npy ".format(name, i), end='')
         if data is None: data = np.load(file)
         else: data = np.append(data, np.load(file), axis=0)
         print(data.shape, end='')
-    print("Loading finished, shape =", data.shape if data is not None else "none")
+    print("\rLoading finished, shape =", data.shape if data is not None else "none")
     
     return data
 
