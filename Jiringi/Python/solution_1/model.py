@@ -33,3 +33,5 @@ def GetModel(input_shape, output_size):
     model.compile(loss='mean_absolute_error', optimizer='adam', metrics=['accuracy'])
 
     model.summary()
+
+    return model
