@@ -18,4 +18,4 @@ select i.ID, i.Name, i.NameEn, i.ShortName
     , (select b.Name from Bond b where b.ID = i.BondID) as Bond
     , (select a.Name from Asset a where a.ID = i.AssetId) as Asset
 from Instrument i
-where i.TypeID = 6
+where i.TypeID in (1)

@@ -28,8 +28,11 @@ from (
 							 , MAX(DateTimeEn) as EndDateTime
 							 , COUNT(1) as RowCounts
 						from Trade
+						where InstrumentID in (
+							select InstrumentID from Instrument where TypeID in (1)
+						)
 						group by InstrumentID
-						having COUNT(1) >= @Minsize
+						--having COUNT(1) >= @Minsize
 
 					) ins
 				) dur
