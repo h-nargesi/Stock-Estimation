@@ -9,10 +9,10 @@ select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     , CAST(CASE WHEN HighIncreasing > 10 THEN 10 WHEN HighIncreasing < -10 THEN -10 ELSE HighIncreasing END AS FLOAT) as HighIncreasing
 from (
     select Trade.InstrumentID, RowCounts, DateTimeEn
-        , ROW_NUMBER() OVER(partition by InstrumentID order by DateTimeEn) as Ranking
+        , ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as Ranking
         , isnull(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
-        , (LowPrice - lag(LowPrice) over(partition by InstrumentID order by DateTimeEn)) / LowPrice as LowIncreasing
-        , (HighPrice - lag(HighPrice) over(partition by InstrumentID order by DateTimeEn)) / HighPrice as HighIncreasing
+        , (LowPrice - lag(LowPrice) over(partition by Trade.InstrumentID order by DateTimeEn)) / LowPrice as LowIncreasing
+        , (HighPrice - lag(HighPrice) over(partition by Trade.InstrumentID order by DateTimeEn)) / HighPrice as HighIncreasing
 		--, Trade.BuyerCount
 		--, Trade.OpenPrice
 		--, Trade.LowPrice
@@ -46,6 +46,9 @@ from (
 							 , MAX(DateTimeEn) as EndDateTime
 							 , COUNT(1) as RowCounts
 						from Trade
+						where InstrumentID in (
+							select InstrumentID from Instrument where TypeID in (1)
+						)
 						group by InstrumentID
 						having COUNT(1) >= @Minsize
 
