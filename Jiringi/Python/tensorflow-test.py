@@ -4,7 +4,7 @@ import codes.trade as trade
 import solution_2.model as modeling
 
 print()
-print("[{}]".format(modeling.GetName().replace('_', '-')))
+print("[{}]".format(modeling.GetName().replace('_', '-').capitalize()))
 
 # Data
 print("\n# Data\n")
