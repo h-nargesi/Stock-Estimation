@@ -64,7 +64,10 @@ def LoadFile(solution, name, pices = None, offset = 1):
         file = '{}/data/{}-{}.npy'.format(solution, name, i)
         print("\rLoading {}-{}.npy ".format(name, i), end='')
         if data is None: data = np.load(file)
-        else: data = np.append(data, np.load(file), axis=0)
+        else:
+            temp = np.load(file)
+            print("\rAppending: data={}, file={}".format(data.shape, temp.shape), end='')
+            data = np.append(data, temp, axis=0)
         print(data.shape, end='')
     print("\rLoading finished, shape =", data.shape if data is not None else "none")
     
