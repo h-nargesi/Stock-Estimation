@@ -30,7 +30,6 @@ from (
 						from Trade
 						group by InstrumentID
 						having COUNT(1) >= @Minsize
-
 					) ins
 				) dur
 			) dens
