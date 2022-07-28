@@ -1,8 +1,7 @@
-declare @InstrumentIDs varchar(max) = '17321, 17322',
+declare @InstrumentIDs varchar(max) = '17321',
 		@Zoom int = 10,
         @Offset int = 0,
-        @Count int = 400
-		;
+        @Count int = null;
 
 WITH BasicData as (
 	select InstrumentID
@@ -15,20 +14,14 @@ WITH BasicData as (
 		, AVG(t.TradeCount) as TradeCount
 		, AVG(t.Volume) as Volume
 	from (
-		select t.InstrumentID
-			, t.DateTimeEn
+		select t.InstrumentID, t.DateTimeEn
 			, ISNULL(BuyerCount, 0) AS BuyerCount
-			, ISNULL(OpenPrice, 0) AS OpenPrice
-			, ISNULL(LowPrice, 0) AS LowPrice
-			, ISNULL(HighPrice, 0) AS HighPrice
-			, ISNULL(ClosePrice, 0) AS ClosePrice
-			, ISNULL(TradeCount, 0) AS TradeCount
-			, ISNULL(Volume, 0) as Volume
+			, OpenPrice, LowPrice, HighPrice, ClosePrice
+			, TradeCount, Volume
 			, ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) / @Zoom as GroupingValue
 		from Trade t
 		where t.InstrumentID in (select CAST(VALUE AS INT) AS ID from STRING_SPLIT(@InstrumentIDs, ','))
 	) t
-	where GroupingValue between @Offset and @Offset + @Count
 	group by InstrumentID, GroupingValue
 
 ), AllInstruments as (
@@ -48,15 +41,33 @@ WITH BasicData as (
 	where t.DateTimeEn between i.StartDateTime and i.EndDateTime
 )
 
-select i.NameEn as Instrument
-	, i.DateTimeEn
-	, SUM(d.BuyerCount) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS BuyerCount
-	, d.BuyerCount
-	, d.OpenPrice
-	, d.LowPrice
-	, d.HighPrice
-	, d.ClosePrice
-	, d.TradeCount
-	, d.Volume
-from InstrumentsFill i
-left join BasicData d on i.InstrumentID = d.InstrumentID and i.DateTimeEn = d.DateTimeEn
+select Instrument, DateTimeEn, BuyerCount
+	, FIRST_VALUE(OpenPrice) OVER (partition by InstrumentID, OpenPriceDomains order by DateTimeEn) as OpenPrice
+	, FIRST_VALUE(LowPrice) OVER (partition by InstrumentID, LowPriceDomains order by DateTimeEn) as LowPrice
+	, FIRST_VALUE(HighPrice) OVER (partition by InstrumentID, HighPriceDomains order by DateTimeEn) as HighPrice
+	, FIRST_VALUE(ClosePrice) OVER (partition by InstrumentID, ClosePriceDomains order by DateTimeEn) as ClosePrice
+	, FIRST_VALUE(TradeCount) OVER (partition by InstrumentID, TradeCountDomains order by DateTimeEn) as TradeCount
+	, FIRST_VALUE(Volume) OVER (partition by InstrumentID, VolumeDomains order by DateTimeEn) as Volume
+from (
+	select i.NameEn as Instrument
+		, i.InstrumentID
+		, i.DateTimeEn
+		, ISNULL(d.BuyerCount, 0) as BuyerCount
+		, d.OpenPrice
+		, d.LowPrice
+		, d.HighPrice
+		, d.ClosePrice
+		, d.TradeCount
+		, d.Volume
+		, SUM(CASE WHEN d.OpenPrice IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS OpenPriceDomains
+		, SUM(CASE WHEN d.LowPrice IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS LowPriceDomains
+		, SUM(CASE WHEN d.HighPrice IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS HighPriceDomains
+		, SUM(CASE WHEN d.ClosePrice IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS ClosePriceDomains
+		, SUM(CASE WHEN d.TradeCount IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS TradeCountDomains
+		, SUM(CASE WHEN d.Volume IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS VolumeDomains
+		, ROW_NUMBER() OVER (partition by i.InstrumentID order by i.DateTimeEn) as Ranking
+	from InstrumentsFill i
+	left join BasicData d on i.InstrumentID = d.InstrumentID and i.DateTimeEn = d.DateTimeEn
+) d
+where (@Offset is null or Ranking >= @Offset)
+  and (@Count is null or Ranking <= ISNULL(@Offset, 0) + @Count)
