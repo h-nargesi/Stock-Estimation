@@ -29,7 +29,7 @@ from (
     from Trade
 	join (
 		select InstrumentID, RowCounts
-			from (
+		from (
 			select top 80 percent dens.InstrumentID, RowCounts
 				 , ROW_NUMBER() over(order by Duration) +
 				   ROW_NUMBER() over(order by Density) * 10 as Score
@@ -51,7 +51,6 @@ from (
 						)
 						group by InstrumentID
 						having COUNT(1) >= @Minsize
-
 					) ins
 				) dur
 			) dens
