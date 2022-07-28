@@ -1,6 +1,6 @@
 import keras
 
-def GetName(): return "solution_1_simple_bigstep"
+def GetName(): return "solution_2"
 
 def GetModel(input_shape, output_size):
     print("Model: {} -> {}".format(input_shape, output_size))

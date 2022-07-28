@@ -3,10 +3,10 @@ declare @Minsize int = 310
 select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
     , t.InstrumentID
     , RowCounts as Size
-    , CloseIncreasing
-	, HighIncreasing
-	, LowIncreasing
-	, OpenIncreasing
+    , CAST(CloseIncreasing AS FLOAT) as CloseIncreasing
+	, CAST(HighIncreasing AS FLOAT) as HighIncreasing
+	, CAST(LowIncreasing AS FLOAT) as LowIncreasing
+	, CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
 	, BuyerCount
 from (
     select InstrumentID, RowCounts, DateTimeEn, Ranking
