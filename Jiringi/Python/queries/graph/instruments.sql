@@ -1,3 +1,5 @@
+declare @TypeIDs varchar(max) = '1'
+
 select i.ID, i.Name, i.NameEn, i.ShortName
     , (select c.Name from Company c where c.ID = i.CompanyID) as Company
     , i.IndexID
@@ -18,4 +20,4 @@ select i.ID, i.Name, i.NameEn, i.ShortName
     , (select b.Name from Bond b where b.ID = i.BondID) as Bond
     , (select a.Name from Asset a where a.ID = i.AssetId) as Asset
 from Instrument i
-where i.TypeID in (1)
+where i.TypeID in (select CAST(VALUE AS INT) AS ID from STRING_SPLIT(@TypeIDs, ','))
