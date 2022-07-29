@@ -1,6 +1,4 @@
 import time
-
-from numpy import record
 import codes.handlers as hd
 from threading import Thread
 
