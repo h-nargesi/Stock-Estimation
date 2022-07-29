@@ -100,7 +100,7 @@ def LoadGuery(path, parameters):
     params = { }
     matches = re.finditer('\@(\w+)\s+[\w\(\)]+\s*=\s*', query)
     for m in matches:
-        params[m.group(1)] = parameters[i]
+        params[m.group(1)] = parameters[i] if i < len(parameters) else None
         i += 1
     
     query = re.sub('(@(\w+)\s+[\w\(\)]+\s*=\s*)[^\r\n,;]*([,;]?)', '\\1%(\\2)d\\3', query)
