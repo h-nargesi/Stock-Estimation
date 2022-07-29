@@ -49,7 +49,7 @@ select Instrument, DateTimeEn, BuyerCount
 	, FIRST_VALUE(TradeCount) OVER (partition by InstrumentID, TradeCountDomains order by DateTimeEn) as TradeCount
 	, FIRST_VALUE(Volume) OVER (partition by InstrumentID, VolumeDomains order by DateTimeEn) as Volume
 from (
-	select i.NameEn as Instrument
+	select i.NameEn + ':' + CAST(i.InstrumentID as varchar(11)) as Instrument
 		, i.InstrumentID
 		, i.DateTimeEn
 		, ISNULL(d.BuyerCount, 0) as BuyerCount

@@ -44,7 +44,7 @@ select Instrument, DateTimeEn
 	, FIRST_VALUE(Duration) OVER (partition by InstrumentID, DurationDomains order by DateTimeEn) as Duration
 	, FIRST_VALUE(Density) OVER (partition by InstrumentID, DensityDomains order by DateTimeEn) as Density
 from (
-	select i.NameEn as Instrument
+	select i.NameEn + ':' + CAST(i.InstrumentID as varchar(11)) as Instrument
 		, i.InstrumentID
 		, i.DateTimeEn
 		, d.RowCounts, d.Duration, d.Density
