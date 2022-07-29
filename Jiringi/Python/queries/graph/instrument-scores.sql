@@ -1,7 +1,8 @@
 declare @Type varchar(max) = 'Score',
-        @Count int = 20
+        @Count int = 20,
+        @MinSize int = 320;
 
-select i.NameEn as Instrument
+select i.NameEn + ':' + CAST(i.ID as varchar(11)) as Instrument
     , RowCounts
     , Density
     , Duration
@@ -12,31 +13,7 @@ select i.NameEn as Instrument
         WHEN 'Duration' THEN Duration
         ELSE Score
       END as Value
-from (
-    select dens.*
-        , ROW_NUMBER() over(order by Duration) +
-            ROW_NUMBER() over(order by Density) * 10 as Score
-    from (
-        select InstrumentID, Duration, RowCounts
-                , CASE Duration WHEN 0 THEN 0 ELSE CAST(RowCounts AS FLOAT) / CAST(Duration AS FLOAT) END AS Density
-        from (
-            select InstrumentID
-                    , ISNULL(DATEDIFF(DAY, StartDateTime, EndDateTime), 0) as Duration
-                    , RowCounts
-            from (
-                select InstrumentID
-                        , MIN(DateTimeEn) as StartDateTime
-                        , MAX(DateTimeEn) as EndDateTime
-                        , COUNT(1) as RowCounts
-                from Trade
-                where InstrumentID in (
-                    select InstrumentID from Instrument where TypeID in (1)
-                )
-                group by InstrumentID
-            ) ins
-        ) dur
-    ) dens
-) t
+from ActiveInstuments(@MinSize) t
 join Instrument i on i.ID = t.InstrumentID
 order by 
     CASE @Type
