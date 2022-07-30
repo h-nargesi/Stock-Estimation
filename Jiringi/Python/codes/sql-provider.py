@@ -8,7 +8,7 @@ class SqlProvider(Sequence):
     TotalCount = 0
     Solution = None
     QueryName = 'query'
-    CountingName = 'counting'
+    CountingName = '../queries/tools/trade-counting'
 
     __batches = dict()
 
