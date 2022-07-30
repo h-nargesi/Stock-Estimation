@@ -3,7 +3,7 @@ import threading
 import codes.handlers as hd
 import numpy as np
 
-class CIFAR10Sequence(Sequence):
+class SqlProvider(Sequence):
     
     TotalCount = 0
     Solution = None
