@@ -1,4 +1,5 @@
 import time
+import math
 import codes.handlers as hd
 from threading import Thread
 
@@ -8,7 +9,7 @@ class TradeReader:
     TotalCount = 0
     Solution = None
     QueryName = 'query'
-    CountingName = 'counting'
+    CountingName = '../queries/tools/trade-counting'
 
     __x_training = list()
     __y_training = list()
@@ -48,9 +49,9 @@ class TradeReader:
         print()
 
     def __fetch_count(self, cursor):
-        self.TotalCount = cursor.fetchone()[0]
-        if self.TotalCount < 1: self.TotalCount = 1
-        self.BATCH_SIZE = self.TotalCount / self.BATCH_COUNT
+        for row in cursor:
+            self.TotalCount += row[1] - self.BUFFER_SIZE + 1
+        self.BATCH_SIZE = int(math.ceil(self.TotalCount / self.BATCH_COUNT))
     
     def __data_handler(self, cursor):
         instrument = None
@@ -58,16 +59,16 @@ class TradeReader:
         
         dur = time.time()
         for row in cursor:
-            if instrument != row[1]:
-                instrument = row[1]
+            if instrument != row[2]:
+                instrument = row[2]
                 buffer.clear()
 
                 if len(self.__x_training) >= 0 and self.__file_index + 1 < self.BATCH_COUNT and \
-                   len(self.__x_training) + row[2] >= self.BATCH_SIZE:
+                   len(self.__x_training) + row[3] >= self.BATCH_SIZE:
                     self.__save_and_reset()
 
             record = list()
-            record.append(row[3:])
+            record.append(row[4:])
 
             buffer.append(record)
             if self.VERBOSE >= 2:
@@ -163,4 +164,3 @@ class TradeReader:
             else: break
 
         return tuple(dims)
-
