@@ -1,7 +1,7 @@
 declare @TypeIDs varchar(max) = '1'
 
 select i.ID, i.Name, i.NameEn, i.ShortName
-    , (select c.Name from Company c where c.ID = i.CompanyID) as Company
+    , c.Name as Company
     , i.IndexID
     --, (select * from [RahavardNovin3].dbo.In ii where ii.ID = i.IndexID) as [Index]
     , (select t.Title from InstrumentType t where t.ID = i.TypeID) as Type
@@ -20,4 +20,5 @@ select i.ID, i.Name, i.NameEn, i.ShortName
     , (select b.Name from Bond b where b.ID = i.BondID) as Bond
     , (select a.Name from Asset a where a.ID = i.AssetId) as Asset
 from Instrument i
+join Company c on c.ID = i.CompanyID
 where i.TypeID in (select CAST(VALUE AS INT) AS ID from STRING_SPLIT(@TypeIDs, ','))
