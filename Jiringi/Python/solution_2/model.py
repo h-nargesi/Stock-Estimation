@@ -29,7 +29,7 @@ def GetModel(input_shape, output_size):
     model.add(keras.layers.Dropout(DROPOUPT_VALUE))
     model.add(keras.layers.Dense(output_size, activation="linear"))
 
-    model.compile(loss='mean_absolute_error', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae'])
 
     model.summary()
 
