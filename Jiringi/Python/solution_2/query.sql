@@ -8,8 +8,6 @@ select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, CAST(HighIncreasing AS FLOAT) as HighIncreasing
 	, CAST(LowIncreasing AS FLOAT) as LowIncreasing
 	, CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
-	, DATEDIFF(DAY, '1921-03-21', DateTimeEn) as DurationDays
-	, d.Code2 as IndustryCode
 from (
 	select InstrumentID, RowCounts, DateTimeEn, TradeNo
 		, ISNULL(ClosePriceChange, CalcClosePriceChange) / ClosePrice as CloseIncreasing
@@ -33,12 +31,5 @@ from (
 		on ValidInstruments.InstrumentID = Trade.InstrumentID
 	) td
 ) t
-join Instrument i on i.ID = t.InstrumentID
-join Company c on c.ID = i.CompanyID
-join (
-	select Code
-		, ROW_NUMBER() OVER (order by Code) as Code2
-	from Industry
-) d on d.Code = c.Code
 where TradeNo > 1
 order by InstrumentID, DateTimeEn
