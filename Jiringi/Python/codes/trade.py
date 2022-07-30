@@ -11,6 +11,7 @@ class TradeReader:
     QueryName = 'query'
     CountingName = '../queries/tools/trade-counting'
 
+    __sizes = list()
     __x_training = list()
     __y_training = list()
     __saving_tasks = list()
@@ -85,6 +86,8 @@ class TradeReader:
             buffer.pop(0)
 
         self.__save_and_reset()
+        self.__sizes.pop()
+        hd.SaveFile(self.Solution, "info", self.__sizes)
 
         if self.VERBOSE >= 1:
             self.__finished_state = "\rReading finished in {0:.2f} sec and {1} files".format(
@@ -110,6 +113,7 @@ class TradeReader:
     
     def __save_and_reset(self):
         self.__file_index += 1
+        self.__sizes.append(len(self.__x_training))
 
         if self.VERBOSE >= 4:
             x_shape = self.__get_shape(self.__x_training)
