@@ -81,7 +81,7 @@ class TradeReader:
             self.__x_training.append(buffer[:self.INPUT_SIZE])
             self.__y_training.append(self.__generate_output(buffer[self.INPUT_SIZE:]))
 
-            buffer.pop()
+            buffer.pop(0)
 
         self.__save_and_reset()
 
