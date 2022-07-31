@@ -133,3 +133,18 @@ def GetConnection():
 
 def GetStringTime():
     return re.sub("[: ]", "-", str(datetime.datetime.now()))
+
+def PrintPerentage(suffix, obj, otype, prefix=None):
+    if type(obj) != list and type(obj) != tuple:
+        obj = [obj]
+    
+    if prefix is None: prefix = ""
+    else: prefix = " " + prefix
+
+    text = ""
+    for index in range(0, len(obj)):
+        text += ", {{{}:{}}}{}".format(index, otype, prefix)
+        index += 1
+    
+    if len(text) > 0:
+        print(suffix, text[2:].format(*obj))
