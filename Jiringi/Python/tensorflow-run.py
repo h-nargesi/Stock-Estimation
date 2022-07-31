@@ -18,9 +18,10 @@ x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1
 print("\n# Modeling\n")
 model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
-check_point_path = "{}/model/{}.hdf5".format(modeling.GetName(), hd.GetStringTime())
+check_point_name = hd.GetStringTime()
+check_point_path = "{}/model/{}.hdf5".format(modeling.GetName(), check_point_name)
 
-if hd.ModelExist(modeling.GetName()):
+if hd.ModelExist(modeling.GetName(), check_point_name):
     model.load_weights(check_point_path)
 
 # Evaluation
