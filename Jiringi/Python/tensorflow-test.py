@@ -2,8 +2,6 @@ from keras.callbacks import ModelCheckpoint
 import codes.handlers as hd
 import codes.trade as trade
 import solution_1_simple_bigstep.model as modeling
-from datetime import datetime
-import re
 
 print()
 print("[{}]".format(modeling.GetName().replace('_', '-').capitalize()))
@@ -20,7 +18,7 @@ x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1
 print("\n# Modeling\n")
 model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
-check_point_path = "{}/model/{}.hdf5".format(modeling.GetName(), re.sub("[: ]", "-", str(datetime.now())))
+check_point_path = "{}/model/{}.hdf5".format(modeling.GetName(), hd.GetStringTime())
 
 if hd.ModelExist(modeling.GetName()):
     model.load_weights(check_point_path)

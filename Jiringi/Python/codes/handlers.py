@@ -1,6 +1,7 @@
 import pymssql as sql
 import numpy as np
 import pandas as pd
+import datetime
 import json
 import re
 import os
@@ -128,3 +129,6 @@ def GetConnection():
         user = info['user'], 
         password = info['password'], 
         database = info['database'])
+
+def GetStringTime():
+    return re.sub("[: ]", "-", str(datetime.datetime.now()))
