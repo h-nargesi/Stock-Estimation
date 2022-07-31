@@ -27,7 +27,7 @@ if hd.ModelExist(modeling.GetName(), check_point_name):
 # Evaluation
 print("\n# Evaluation\n")
 score = model.evaluate(x_testing, y_testing, verbose=1)
-print('Test accuracy: ', score * 100)
+print('Test accuracy: {0:.3f} %'.format(score))
 
 # Training
 print("\n# Training\n")
@@ -41,4 +41,4 @@ hist = model.fit(x_training, y_training, batch_size=1024, epochs=100,
 # Evaluation
 print("\n# Evaluation\n")
 score = model.evaluate(x_testing, y_testing, verbose=1)
-print('Test accuracy: ', score * 100)
+print('Test accuracy: {0:.3f} %'.format(score))
