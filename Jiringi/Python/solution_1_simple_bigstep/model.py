@@ -35,5 +35,3 @@ def GetModel(input_shape, output_size):
     model.summary()
 
     return model
-
-GetModel((220, 1, 1), 3)
