@@ -27,6 +27,10 @@ def GetFilesCount(solution):
             count += 1
     return count
 
+def ModelList(solution):
+    dir_path = '{}/model/'.format(solution)
+    return os.listdir(dir_path)
+
 def ModelExist(solution, name):
     os.makedirs('{}/model/'.format(solution), exist_ok=True)
     return os.path.isfile("{}/model/{}.hdf5".format(solution, name))
@@ -39,16 +43,34 @@ def LoadData(solution, test_count):
 
     if total < 0: raise "Data have not read yet."
 
+    x_training, y_training = LoadTrainData(solution, test_count)
+    x_testing, y_testing = LoadTestData(solution, test_count)
+
+    return (x_training, y_training, x_testing, y_testing)
+
+def LoadTrainData(solution, test_count):
+    total = int(GetFilesCount(solution) / 2)
+
+    if total < 0: raise "Data have not read yet."
+
     x_training = LoadFile(solution, 'trade-x', total - test_count)
     y_training = LoadFile(solution, 'trade-y', total - test_count)
+
+    print("training.shapes: x{}, y{}".format(x_training.shape, y_training.shape))
+
+    return (x_training, y_training)
+
+def LoadTestData(solution, test_count):
+    total = int(GetFilesCount(solution) / 2)
+
+    if total < 0: raise "Data have not read yet."
 
     x_testing = LoadFile(solution, 'trade-x', test_count, total)
     y_testing = LoadFile(solution, 'trade-y', test_count, total)
 
-    print("training.shapes: x{}, y{}".format(x_training.shape, y_training.shape))
     print("testing.shapes: x{}, y{}".format(x_testing.shape, y_testing.shape))
 
-    return (x_training, y_training, x_testing, y_testing)
+    return (x_testing, y_testing)
 
 def LoadFile(solution, name, pices = None, offset = 1):
     data = None
@@ -134,7 +156,7 @@ def GetConnection():
 def GetStringTime():
     return re.sub("[: ]", "-", str(datetime.datetime.now()))
 
-def PrintPerentage(suffix, obj, otype, prefix=None):
+def PrintPerentage(suffix, obj, otype, prefix=None, factor=1):
     if type(obj) != list and type(obj) != tuple:
         obj = [obj]
     
@@ -145,6 +167,9 @@ def PrintPerentage(suffix, obj, otype, prefix=None):
     for index in range(0, len(obj)):
         text += ", {{{}:{}}}{}".format(index, otype, prefix)
         index += 1
+
+    if factor != 1:
+        obj = (np.array(obj) * factor).tolist()
     
     if len(text) > 0:
         print(suffix, text[2:].format(*obj))
