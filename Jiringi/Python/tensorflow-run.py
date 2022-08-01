@@ -1,7 +1,7 @@
 from keras.callbacks import ModelCheckpoint
 import codes.handlers as hd
 import codes.trade as trade
-import solution_1_simple_bigstep.model as modeling
+import solution_1_simple.model as modeling
 
 print()
 print("[{}]".format(modeling.GetName().replace('_', '-').capitalize()))
