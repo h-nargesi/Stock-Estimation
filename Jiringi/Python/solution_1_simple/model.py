@@ -1,4 +1,5 @@
 import keras
+import codes.handlers as hd
 
 def GetName(): return "solution_1_simple"
 
@@ -35,3 +36,6 @@ def GetModel(input_shape, output_size):
     model.summary()
 
     return model
+
+def PrintResult(score):
+    hd.PrintPerentage('Result:', score, ".3f", "%", 100)
