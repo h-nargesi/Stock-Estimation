@@ -1,20 +1,17 @@
-declare @Minsize int = 310
+declare @MinSize int = 310
 
-select ROW_NUMBER() OVER(order by t.InstrumentID, t.DateTimeEn) as Ranking
-    , t.InstrumentID
-    , c.Size
-    , CAST(CASE WHEN CloseIncreasing > 10 THEN 10 WHEN CloseIncreasing < -10 THEN -10 ELSE CloseIncreasing END AS FLOAT) as CloseIncreasing
+select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
+	, TradeNo - 1 as TradeNo
+	, InstrumentID
+	, RowCounts - 1 as RowCounts
+    , 100 * CAST(CASE WHEN CloseIncreasing > 0.1 THEN 0.1 WHEN CloseIncreasing < -0.1 THEN -0.1 ELSE CloseIncreasing END AS FLOAT) as CloseIncreasing
 from (
-    select InstrumentID, DateTimeEn
-        , ROW_NUMBER() OVER(partition by InstrumentID order by DateTimeEn) as Ranking
-        , isnull(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
+    select Trade.InstrumentID, RowCounts, DateTimeEn
+        , ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as TradeNo
+        , ISNULL(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
     from Trade
+	join ActiveInstuments(@MinSize) ValidInstruments
+	on ValidInstruments.InstrumentID = Trade.InstrumentID
 ) t
-join (
-    select InstrumentID, COUNT(DateTimeEn) as Size
-    from Trade
-    group by InstrumentID
-    having COUNT(DateTimeEn) >= @Minsize
-) c on t.InstrumentID = c.InstrumentID
-where t.Ranking > 1
+where t.TradeNo > 1
 order by InstrumentID, DateTimeEn

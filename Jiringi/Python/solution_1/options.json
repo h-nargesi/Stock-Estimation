@@ -1,5 +1,5 @@
 {
-    "Input Size": 300,
+    "Input Size": 120,
     "Output Size": [3, 4],
     "Batch Count": 5
 }
