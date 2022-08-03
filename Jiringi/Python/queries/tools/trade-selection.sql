@@ -1,4 +1,4 @@
-declare @Minsize int = 310
+declare @MinSize int = 310
 
 select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, TradeNo - 1 as TradeNo
@@ -39,6 +39,6 @@ join (
 	select Code
 		, ROW_NUMBER() OVER (order by Code) as Code2
 	from Industry
-) d on d.Code = c.Code
+) d on d.Code = c.IndustryCode
 where TradeNo > 1
 order by InstrumentID, DateTimeEn

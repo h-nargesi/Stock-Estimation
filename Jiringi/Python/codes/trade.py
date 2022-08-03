@@ -30,7 +30,8 @@ class TradeReader:
         self.OUTPUT_GAPS = options['Output Size'][1]
         self.BUFFER_SIZE = self.INPUT_SIZE + options['Output Size'][0] * (self.OUTPUT_GAPS + 1)
         self.BATCH_COUNT = options['Batch Count']
-        self.Parameters = (options['Factor'], )
+        self.FACTOR = options['Factor']
+        self.Parameters = (self.FACTOR, )
 
     def ReadData(self, ignore_existing = False):
 
@@ -57,8 +58,8 @@ class TradeReader:
     def __fetch_count(self, cursor):
         total_batch_size = 0
         for row in cursor:
-            total_batch_size += row[1] - self.BUFFER_SIZE + 1
-            self.TotalCount += row[1]
+            total_batch_size += row[1] - self.BUFFER_SIZE
+            self.TotalCount += row[1] - 1
         self.BATCH_SIZE = int(math.ceil(self.TotalCount / self.BATCH_COUNT))
     
     def __data_handler(self, cursor):
@@ -107,14 +108,15 @@ class TradeReader:
         acc = 0.0
         moves = 0
         for d in data:
-            acc = acc + d[0][0] - acc * d[0][0]
+            spot_change: float = d[0][0] / self.FACTOR
+            acc = acc + spot_change - acc * spot_change
             
             if moves >= self.OUTPUT_GAPS:
-                output.append(acc)
+                output.append(acc * self.FACTOR)
                 moves = 0
             else: moves += 1
 
-        if moves > 0: output.append(acc)
+        if moves > 0: output.append(acc * self.FACTOR)
         
         return output
     
