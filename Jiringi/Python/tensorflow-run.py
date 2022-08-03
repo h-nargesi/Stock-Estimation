@@ -12,7 +12,7 @@ print("\n# Data\n")
 loader = TradeReader(hd, verbose=4)
 if hasattr(Modelling, 'TradeReader') and callable(getattr(Modelling, 'TradeReader')):
     Modelling.TradeReader(loader)
-loader.ReadData(ignore_existing=True)
+loader.ReadData(ignore_existing=False)
 
 x_training, y_training, x_testing, y_testing = hd.LoadData(1)
 
