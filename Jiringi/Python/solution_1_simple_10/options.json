@@ -1,6 +1,6 @@
 {
-    "Input Size": 220,
-    "Output Size": [4, 4],
+    "Input Size": 120,
+    "Output Size": [3, 4],
     "Batch Count": 5,
     "Factor": 10
 }
