@@ -1,25 +1,25 @@
 import math
 from keras.utils import Sequence
-from codes.handlers import Handlers as hd
+from codes.handlers import Handlers
 
 class FileProvider(Sequence):
     
-    Solution = None
     TotalCount = None
     Sizes = None
+    Handler: Handlers = None
 
     __index = -1
     __data = None
 
-    def __init__(self, solution, batch_size):
+    def __init__(self, handlers: Handlers, batch_size):
         if batch_size <= 0: raise "batch_size: out of range"
 
-        self.Solution = solution
+        self.Handler = handlers
         self.BATCH_SIZE = batch_size
 
     def __len__(self):
         if self.TotalCount is None:
-            self.Sizes = hd.LoadFile(self.Solution, "info")
+            self.Sizes = self.Handler.LoadFile("info")
 
             self.__index = 0
 
@@ -60,5 +60,5 @@ class FileProvider(Sequence):
         else: return idx - self.Sizes[self.__index]
 
     def __loaddata__(self):
-        self.__x_data = hd.LoadFile(self.Solution, "trade-x", 1, self.__index + 1)
-        self.__y_data = hd.LoadFile(self.Solution, "trade-y", 1, self.__index + 1)
+        self.__x_data = self.Handler.LoadFile("trade-x", 1, self.__index + 1)
+        self.__y_data = self.Handler.LoadFile("trade-y", 1, self.__index + 1)
