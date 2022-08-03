@@ -12,16 +12,16 @@ print("\n# Data\n")
 loader = TradeReader(hd, verbose=4)
 if hasattr(Modelling, 'TradeReader') and callable(getattr(Modelling, 'TradeReader')):
     Modelling.TradeReader(loader)
-loader.ReadData(ignore_existing=False)
+loader.ReadData(ignore_existing=True)
 
 x_training, y_training, x_testing, y_testing = hd.LoadData(1)
 
 # Modeling
 print("\n# Modeling\n")
 modeling = Modelling(hd.LoadOptions()["Factor"])
-model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
+model = Modelling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
-check_point_name = hd.GetStringTime()
+check_point_name = Handlers.GetStringTime()
 check_point_path = "{}/model/{}.hdf5".format(Modelling.NAME, check_point_name)
 
 if hd.ModelExist(check_point_name):

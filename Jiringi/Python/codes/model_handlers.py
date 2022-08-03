@@ -14,7 +14,7 @@ class ModelHandlers:
         predicted = np.multiply(predicted, y_testing)
         return np.average(predicted)
 
-    def PrintPerentage(self, score, suffix='Result:', otype='.3f', prefix='%'):
+    def PrintResult(self, score, suffix='Result:', otype='.3f', prefix='%'):
         if type(score) != list and type(score) != tuple:
             score = [score]
         

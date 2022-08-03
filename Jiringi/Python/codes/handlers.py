@@ -10,7 +10,8 @@ import shutil
 
 class Handlers:
 
-    SOLUTION = ""
+    SOLUTION = None
+    OPTIONS = None
 
     def __init__(self, solution):
         self.SOLUTION = solution

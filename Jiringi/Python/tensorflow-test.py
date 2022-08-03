@@ -13,12 +13,12 @@ x_testing, y_testing = hd.LoadTestData(1)
 # Modeling
 print("\n# Modeling\n")
 modeling = Modelling(hd.LoadOptions()["Factor"])
-model = modeling.GetModel(x_testing.shape[1:], y_testing.shape[-1])
+model = Modelling.GetModel(x_testing.shape[1:], y_testing.shape[-1])
 
 models = hd.ModelList()
 for check_point_path in models:
     print('\n[{}]'.format(check_point_path))
-    model.load_weights("{}/model/{}".format(check_point_path))
+    model.load_weights("{}/model/{}".format(Modelling.NAME, check_point_path))
 
     # Evaluation
     print("\n# Evaluation")
