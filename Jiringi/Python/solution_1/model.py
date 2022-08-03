@@ -8,7 +8,7 @@ def GetModel(input_shape, output_size):
     DROPOUPT_VALUE_CNN = 0.1
     DROPOUPT_VALUE_FC = 0.7
 
-    model = keras.models.Sequential(name=GetName())
+    model = keras.models.Sequential(name="Jiringi_" + GetName())
     model.add(keras.Input(shape=input_shape))
 
     features = input_shape[2] * 20
