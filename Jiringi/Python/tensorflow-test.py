@@ -1,5 +1,5 @@
 import numpy as np
-import codes.handlers as hd
+from codes.handlers import Handlers as hd
 from solution_1.model import Modelling as modeling
 
 print()

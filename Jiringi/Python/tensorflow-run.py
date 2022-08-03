@@ -1,6 +1,6 @@
 from keras.callbacks import ModelCheckpoint
-import codes.handlers as hd
-import codes.trade as trade
+from codes.handlers import Handlers as hd
+from codes.trade import TradeReader
 from solution_1.model import Modelling as modeling
 
 print()
@@ -9,7 +9,7 @@ print("[{}]".format(modeling.NAME.replace('_', '-').capitalize()))
 # Data
 print("\n# Data\n")
 options = hd.LoadOptions(modeling.NAME, "options.json")
-loader = trade.TradeReader(*options, verbose=4)
+loader = TradeReader(*options, verbose=4)
 if hasattr(modeling, 'TradeReader') and callable(getattr(modeling, 'TradeReader')):
     modeling.TradeReader(loader)
 loader.ReadData(ignore_existing=False)

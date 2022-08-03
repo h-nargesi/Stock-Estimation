@@ -1,7 +1,7 @@
-from keras.utils import Sequence
-import threading
-import codes.handlers as hd
 import numpy as np
+from keras.utils import Sequence
+from threading import Thread
+from codes.handlers import Handlers as hd
 
 class SqlProvider(Sequence):
     
@@ -37,7 +37,7 @@ class SqlProvider(Sequence):
         self.TotalCount = int(np.ceil(self.TotalCount / self.BATCH_SIZE))
     
     def __start_reading_data(self):
-        self.__saving_task = threading.Thread(target=hd.SqlQueryExecute, args=(self.Solution, self.QueryName, (self.BUFFER_SIZE, ), self.__data_handler,))
+        self.__saving_task = Thread(target=hd.SqlQueryExecute, args=(self.Solution, self.QueryName, (self.BUFFER_SIZE, ), self.__data_handler,))
         self.__saving_task.start()
     
     def __getitem__(self, idx):

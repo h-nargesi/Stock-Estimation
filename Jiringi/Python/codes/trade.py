@@ -1,6 +1,6 @@
 import time
 import math
-import codes.handlers as hd
+from codes.handlers import Handlers as hd
 from threading import Thread
 
 class TradeReader:

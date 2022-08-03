@@ -1,6 +1,6 @@
 import math
 from keras.utils import Sequence
-import codes.handlers as hd
+from codes.handlers import Handlers as hd
 
 class FileProvider(Sequence):
     

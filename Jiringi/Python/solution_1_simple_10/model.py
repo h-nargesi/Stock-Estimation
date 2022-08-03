@@ -1,5 +1,5 @@
 import keras
-import codes.handlers as hd
+from codes.handlers import Handlers as hd
 
 def GetName(): return "solution_1_simple_10"
 
