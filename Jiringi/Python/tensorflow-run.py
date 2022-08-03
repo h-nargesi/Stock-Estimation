@@ -1,30 +1,29 @@
 from keras.callbacks import ModelCheckpoint
-import numpy as np
 import codes.handlers as hd
 import codes.trade as trade
-import solution_1_simple_10.model as modeling
+from solution_1.model import Modelling as modeling
 
 print()
-print("[{}]".format(modeling.GetName().replace('_', '-').capitalize()))
+print("[{}]".format(modeling.NAME.replace('_', '-').capitalize()))
 
 # Data
 print("\n# Data\n")
-options = hd.LoadOptions(modeling.GetName(), "options.json")
+options = hd.LoadOptions(modeling.NAME, "options.json")
 loader = trade.TradeReader(*options, verbose=4)
 if hasattr(modeling, 'TradeReader') and callable(getattr(modeling, 'TradeReader')):
     modeling.TradeReader(loader)
 loader.ReadData(ignore_existing=False)
 
-x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.GetName(), 1)
+x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.NAME, 1)
 
 # Modeling
 print("\n# Modeling\n")
 model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
 check_point_name = hd.GetStringTime()
-check_point_path = "{}/model/{}.hdf5".format(modeling.GetName(), check_point_name)
+check_point_path = "{}/model/{}.hdf5".format(modeling.NAME, check_point_name)
 
-if hd.ModelExist(modeling.GetName(), check_point_name):
+if hd.ModelExist(modeling.NAME, check_point_name):
     model.load_weights(check_point_path)
 
 # Evaluation
@@ -35,9 +34,8 @@ modeling.PrintResult(score)
 # Prediction
 print("\n# Prediction\n")
 predicted = model.predict(x_testing)
-predicted = np.sign(np.sign(predicted - 0.02) + 1)
-predicted = np.multiply(predicted, y_testing)
-modeling.PrintResult(np.average(predicted))
+average = modeling.Prediction(predicted, y_testing)
+modeling.PrintResult(average)
 
 # Training
 print("\n# Training\n")
@@ -56,6 +54,5 @@ modeling.PrintResult(score)
 # Prediction
 print("\n# Prediction\n")
 predicted = model.predict(x_testing)
-predicted = np.sign(np.sign(predicted - 0.02) + 1)
-predicted = np.multiply(predicted, y_testing)
-modeling.PrintResult(np.average(predicted))
+average = modeling.Prediction(predicted, y_testing)
+modeling.PrintResult(average)
