@@ -1,23 +1,24 @@
-import numpy as np
-from codes.handlers import Handlers as hd
-from solution_1.model import Modelling as modeling
+from codes.handlers import Handlers
+from solution_1.model import Modelling
 
 print()
-print("[{}]".format(modeling.NAME.replace('_', '-').capitalize()))
+print("[{}]".format(Modelling.NAME.replace('_', '-').capitalize()))
+hd = Handlers(Modelling.NAME)
 
 # Data
 print("\n# Data\n")
 
-x_testing, y_testing = hd.LoadTestData(modeling.NAME, 1)
+x_testing, y_testing = hd.LoadTestData(1)
 
 # Modeling
 print("\n# Modeling\n")
+modeling = Modelling(hd.LoadOptions()["Factor"])
 model = modeling.GetModel(x_testing.shape[1:], y_testing.shape[-1])
 
-models = hd.ModelList(modeling.NAME)
+models = hd.ModelList()
 for check_point_path in models:
     print('\n[{}]'.format(check_point_path))
-    model.load_weights("{}/model/{}".format(modeling.NAME, check_point_path))
+    model.load_weights("{}/model/{}".format(check_point_path))
 
     # Evaluation
     print("\n# Evaluation")

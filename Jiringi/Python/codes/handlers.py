@@ -1,3 +1,4 @@
+from logging import Handler
 import pymssql as sql
 import numpy as np
 import pandas as pd
@@ -11,77 +12,80 @@ class Handlers:
 
     SOLUTION = ""
 
-    def SaveFile(name, data):
-        os.makedirs('{}/data/'.format(Handlers.SOLUTION), exist_ok=True)
+    def __init__(self, solution):
+        self.SOLUTION = solution
+
+    def SaveFile(self, name, data):
+        os.makedirs('{}/data/'.format(self.SOLUTION), exist_ok=True)
         data = np.array(data)
-        np.save('{}/data/{}.npy'.format(Handlers.SOLUTION, name), data)
+        np.save('{}/data/{}.npy'.format(self.SOLUTION, name), data)
         return data.shape
 
-    def ClearDataDirectory():
-        if Handlers.DataExist():
-            shutil.rmtree('{}/data/'.format(Handlers.SOLUTION))
+    def ClearDataDirectory(self):
+        if self.DataExist():
+            shutil.rmtree('{}/data/'.format(self.SOLUTION))
 
-    def GetFilesCount():
-        if not Handlers.DataExist(): return 0
+    def GetFilesCount(self):
+        if not self.DataExist(): return 0
 
-        dir_path = '{}/data/'.format(Handlers.SOLUTION)
+        dir_path = '{}/data/'.format(self.SOLUTION)
         count = 0
         for path in os.listdir(dir_path):
             if os.path.isfile(os.path.join(dir_path, path)):
                 count += 1
         return count
 
-    def ModelList():
-        dir_path = '{}/model/'.format(Handlers.SOLUTION)
+    def ModelList(self):
+        dir_path = '{}/model/'.format(self.SOLUTION)
         return os.listdir(dir_path)
 
-    def ModelExist(name):
-        os.makedirs('{}/model/'.format(Handlers.SOLUTION), exist_ok=True)
-        return os.path.isfile("{}/model/{}.hdf5".format(Handlers.SOLUTION, name))
+    def ModelExist(self, name):
+        os.makedirs('{}/model/'.format(self.SOLUTION), exist_ok=True)
+        return os.path.isfile("{}/model/{}.hdf5".format(self.SOLUTION, name))
 
-    def DataExist():
-        return os.path.isdir('{}/data/'.format(Handlers.SOLUTION))
+    def DataExist(self):
+        return os.path.isdir('{}/data/'.format(self.SOLUTION))
 
-    def LoadData(test_count):
-        total = int(Handlers.GetFilesCount() / 2)
+    def LoadData(self, test_count):
+        total = int(self.GetFilesCount() / 2)
 
         if total < 0: raise "Data have not read yet."
 
-        x_training, y_training = Handlers.LoadTrainData(test_count)
-        x_testing, y_testing = Handlers.LoadTestData(test_count)
+        x_training, y_training = self.LoadTrainData(test_count)
+        x_testing, y_testing = self.LoadTestData(test_count)
 
         return (x_training, y_training, x_testing, y_testing)
 
-    def LoadTrainData(test_count):
-        total = int(Handlers.GetFilesCount() / 2)
+    def LoadTrainData(self, test_count):
+        total = int(self.GetFilesCount() / 2)
 
         if total < 0: raise "Data have not read yet."
 
-        x_training = Handlers.LoadFile('trade-x', total - test_count)
-        y_training = Handlers.LoadFile('trade-y', total - test_count)
+        x_training = self.LoadFile('trade-x', total - test_count)
+        y_training = self.LoadFile('trade-y', total - test_count)
 
         print("training.shapes: x{}, y{}".format(x_training.shape, y_training.shape))
 
         return (x_training, y_training)
 
-    def LoadTestData(test_count):
-        total = int(Handlers.GetFilesCount() / 2)
+    def LoadTestData(self, test_count):
+        total = int(self.GetFilesCount() / 2)
 
         if total < 0: raise "Data have not read yet."
 
-        x_testing = Handlers.LoadFile('trade-x', test_count, total)
-        y_testing = Handlers.LoadFile('trade-y', test_count, total)
+        x_testing = self.LoadFile('trade-x', test_count, total)
+        y_testing = self.LoadFile('trade-y', test_count, total)
 
         print("testing.shapes: x{}, y{}".format(x_testing.shape, y_testing.shape))
 
         return (x_testing, y_testing)
 
-    def LoadFile(name, pices = None, offset = 1):
+    def LoadFile(self, name, pices = None, offset = 1):
         data = None
         
         if pices is None:
             print("Loading {}.npy".format(name), end='')
-            data = np.load('{}/data/{}.npy'.format(Handlers.SOLUTION, name))
+            data = np.load('{}/data/{}.npy'.format(self.SOLUTION, name))
             print("\r{}.npy was loaded".format(name))
             return data
         
@@ -89,7 +93,7 @@ class Handlers:
 
         print("Loading files", end='')
         for i in range(offset, pices + offset):
-            file = '{}/data/{}-{}.npy'.format(Handlers.SOLUTION, name, i)
+            file = '{}/data/{}-{}.npy'.format(self.SOLUTION, name, i)
             print("\rLoading {}-{}.npy ".format(name, i), end='')
             if data is None: data = np.load(file)
             else:
@@ -101,9 +105,9 @@ class Handlers:
         
         return data
 
-    def SqlQueryExecute(file, parameters, job):
+    def SqlQueryExecute(self, file, parameters, job):
         
-        path = "{}/{}.sql".format(Handlers.SOLUTION, file)
+        path = "{}/{}.sql".format(self.SOLUTION, file)
         query, parameters = Handlers.LoadGuery(path, parameters)
 
         with Handlers.GetConnection() as connection:
@@ -111,13 +115,19 @@ class Handlers:
                 cursor.execute(query, parameters)
                 job(cursor)
 
-    def ReadPanda(file, parameters=None):
+    def ReadPanda(self, file, parameters=None):
         
-        path = "{}/{}.sql".format(Handlers.SOLUTION, file)
+        path = "{}/{}.sql".format(self.SOLUTION, file)
         query, parameters = Handlers.LoadGuery(path, parameters)
 
         with Handlers.GetConnection() as connection:
             return pd.read_sql(query, connection, params=parameters)
+
+    def LoadOptions(self, file='options.json'):
+        if self.OPTIONS is None:
+            self.OPTIONS = Handlers.LoadSetting(self.SOLUTION, file)
+            print("Options: ", self.OPTIONS)
+        return self.OPTIONS
 
     def LoadGuery(path, parameters):
         
@@ -135,29 +145,22 @@ class Handlers:
         
         return (query, params)
 
-    def LoadOptions(file):
-        options = Handlers.LoadSetting(file)
-        print("Options: ", options)
-        return (Handlers.SOLUTION, options["Input Size"], options["Output Size"][0], options["Output Size"][1], options["Batch Count"])
-
-    def LoadSetting(file, solution = None):
-
-        if solution is None: solution = Handlers.SOLUTION
-
-        with open("{}/{}".format(solution, file), 'r') as content:
-            info = json.load(content)
-        
-        return info
-
     def GetConnection():
 
-        info = Handlers.LoadSetting("setting.json", "queries")
+        info = Handlers.LoadSetting("queries", "setting.json")
 
         return sql.connect(
             server = info['server'],
             user = info['user'], 
             password = info['password'], 
             database = info['database'])
+
+    def LoadSetting(solution, file):
+
+        with open("{}/{}".format(solution, file), 'r') as content:
+            info = json.load(content)
+        
+        return info
 
     def GetStringTime():
         return re.sub("[: ]", "-", str(datetime.datetime.now()))

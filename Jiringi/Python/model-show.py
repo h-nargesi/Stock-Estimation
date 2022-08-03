@@ -1,3 +1,3 @@
-import solution_1.model as modeling
+from solution_1.model import Modelling
 
-modeling.GetModel((120, 1, 1), 4)
+Modelling.GetModel((120, 1, 1), 4)

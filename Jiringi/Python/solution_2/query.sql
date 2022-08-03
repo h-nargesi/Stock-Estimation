@@ -1,13 +1,14 @@
-declare @Minsize int = 310
+declare @MinSize int = 310,
+        @Factor int = 100
 
 select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, TradeNo - 1 as TradeNo
 	, InstrumentID
 	, RowCounts - 1 as RowCounts
-	, CAST(CloseIncreasing AS FLOAT) as CloseIncreasing
-	, CAST(HighIncreasing AS FLOAT) as HighIncreasing
-	, CAST(LowIncreasing AS FLOAT) as LowIncreasing
-	, CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
+	, @Factor * CAST(CloseIncreasing AS FLOAT) as CloseIncreasing
+	, @Factor * CAST(HighIncreasing AS FLOAT) as HighIncreasing
+	, @Factor * CAST(LowIncreasing AS FLOAT) as LowIncreasing
+	, @Factor * CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
 from (
 	select InstrumentID, RowCounts, DateTimeEn, TradeNo
 		, ISNULL(ClosePriceChange, CalcClosePriceChange) / ClosePrice as CloseIncreasing

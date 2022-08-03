@@ -1,29 +1,30 @@
 from keras.callbacks import ModelCheckpoint
-from codes.handlers import Handlers as hd
+from codes.handlers import Handlers
 from codes.trade import TradeReader
-from solution_1.model import Modelling as modeling
+from solution_1.model import Modelling
 
 print()
-print("[{}]".format(modeling.NAME.replace('_', '-').capitalize()))
+print("[{}]".format(Modelling.NAME.replace('_', '-').capitalize()))
+hd = Handlers(Modelling.NAME)
 
 # Data
 print("\n# Data\n")
-options = hd.LoadOptions(modeling.NAME, "options.json")
-loader = TradeReader(*options, verbose=4)
-if hasattr(modeling, 'TradeReader') and callable(getattr(modeling, 'TradeReader')):
-    modeling.TradeReader(loader)
+loader = TradeReader(hd, verbose=4)
+if hasattr(Modelling, 'TradeReader') and callable(getattr(Modelling, 'TradeReader')):
+    Modelling.TradeReader(loader)
 loader.ReadData(ignore_existing=False)
 
-x_training, y_training, x_testing, y_testing = hd.LoadData(modeling.NAME, 1)
+x_training, y_training, x_testing, y_testing = hd.LoadData(1)
 
 # Modeling
 print("\n# Modeling\n")
+modeling = Modelling(hd.LoadOptions()["Factor"])
 model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
 check_point_name = hd.GetStringTime()
-check_point_path = "{}/model/{}.hdf5".format(modeling.NAME, check_point_name)
+check_point_path = "{}/model/{}.hdf5".format(Modelling.NAME, check_point_name)
 
-if hd.ModelExist(modeling.NAME, check_point_name):
+if hd.ModelExist(check_point_name):
     model.load_weights(check_point_path)
 
 # Evaluation

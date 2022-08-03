@@ -4,8 +4,9 @@ from codes.model_handlers import ModelHandlers
 class Modelling(ModelHandlers):
 
     NAME = "solution_1"
-    FACTOR = 100
-    SHOW_FACTOR = 100 / FACTOR
+
+    def __init__(self, factor) -> None:
+        super().__init__(factor)
 
     def GetModel(input_shape, output_size):
         print("Model: {} -> {}".format(input_shape, output_size))
@@ -38,9 +39,3 @@ class Modelling(ModelHandlers):
         model.summary()
 
         return model
-
-    def Prediction(predicted, y_testing):
-        ModelHandlers.Prediction(predicted, y_testing, Modelling.SHOW_FACTOR)
-    
-    def PrintResult(score):
-        ModelHandlers.PrintResult('Result:', score, ".4f", "%", Modelling.SHOW_FACTOR)

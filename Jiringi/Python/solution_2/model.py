@@ -1,37 +1,43 @@
 import keras
+from codes.model_handlers import ModelHandlers
 
-def GetName(): return "solution_2"
+class Modelling(ModelHandlers):
 
-def GetModel(input_shape, output_size):
-    print("Model: {} -> {}".format(input_shape, output_size))
-    DROPOUPT_VALUE_CNN = 0.33
-    DROPOUPT_VALUE_FC = 0.66
+    NAME = "solution_2"
 
-    model = keras.models.Sequential(name=GetName())
-    model.add(keras.Input(shape=input_shape))
+    def __init__(self, factor) -> None:
+        super().__init__(factor)
 
-    features = input_shape[2] * 20
-    model.add(keras.layers.Conv2D(features, (30, 1), strides=(2, 1), kernel_initializer='normal', activation='gelu'))
-    model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
+    def GetModel(input_shape, output_size):
+        print("Model: {} -> {}".format(input_shape, output_size))
+        DROPOUPT_VALUE_CNN = 0.33
+        DROPOUPT_VALUE_FC = 0.66
 
-    features += input_shape[2] * 10
-    model.add(keras.layers.Conv2D(features, (15, 1), strides=(2, 1), kernel_initializer='normal', activation='gelu'))
-    model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
+        model = keras.models.Sequential(name="Jiringi_" + Modelling.NAME)
+        model.add(keras.Input(shape=input_shape))
 
-    features += input_shape[2] * 5
-    model.add(keras.layers.Conv2D(features, (10, 1), strides=(3, 1), kernel_initializer='normal', activation='gelu'))
-    model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
+        features = input_shape[2] * 20
+        model.add(keras.layers.Conv2D(features, (30, 1), strides=(2, 1), kernel_initializer='normal', activation='gelu'))
+        model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
 
-    model.add(keras.layers.Flatten())
+        features += input_shape[2] * 10
+        model.add(keras.layers.Conv2D(features, (15, 1), strides=(2, 1), kernel_initializer='normal', activation='gelu'))
+        model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
 
-    model.add(keras.layers.Dense(100, kernel_initializer='normal', activation="gelu"))
-    model.add(keras.layers.Dropout(DROPOUPT_VALUE_FC))
-    model.add(keras.layers.Dense(50, kernel_initializer='normal', activation="gelu"))
-    model.add(keras.layers.Dropout(DROPOUPT_VALUE_FC))
-    model.add(keras.layers.Dense(output_size, kernel_initializer='normal', activation="linear"))
+        features += input_shape[2] * 5
+        model.add(keras.layers.Conv2D(features, (10, 1), strides=(3, 1), kernel_initializer='normal', activation='gelu'))
+        model.add(keras.layers.Dropout(DROPOUPT_VALUE_CNN))
 
-    model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+        model.add(keras.layers.Flatten())
 
-    model.summary()
+        model.add(keras.layers.Dense(100, kernel_initializer='normal', activation="gelu"))
+        model.add(keras.layers.Dropout(DROPOUPT_VALUE_FC))
+        model.add(keras.layers.Dense(50, kernel_initializer='normal', activation="gelu"))
+        model.add(keras.layers.Dropout(DROPOUPT_VALUE_FC))
+        model.add(keras.layers.Dense(output_size, kernel_initializer='normal', activation="linear"))
 
-    return model
+        model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+
+        model.summary()
+
+        return model

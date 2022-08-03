@@ -1,13 +1,13 @@
 import time
 import math
-from codes.handlers import Handlers as hd
+from codes.handlers import Handlers
 from threading import Thread
 
 class TradeReader:
 
     Shapes = None
+    Handler: Handlers = None
     TotalCount = 0
-    Solution = None
     QueryName = 'query'
     CountingName = '../queries/tools/trade-counting'
     Parameters = ()
@@ -20,21 +20,25 @@ class TradeReader:
     __file_state = None
     __finished_state = None
 
-    def __init__(self, solution, input_size, output_size, output_gaps, batch_count = 5, verbose = 3):
-        self.Solution = solution
-        self.INPUT_SIZE = input_size
-        self.OUTPUT_GAPS = output_gaps
-        self.BUFFER_SIZE = input_size + output_size * (output_gaps + 1)
-        self.BATCH_COUNT = batch_count
+    def __init__(self, handler: Handlers, verbose=3):
+        self.Handler = handler
         self.VERBOSE = verbose
+
+        options = handler.LoadOptions()
+
+        self.INPUT_SIZE = options['Input Size']
+        self.OUTPUT_GAPS = options['Output Size'][1]
+        self.BUFFER_SIZE = self.INPUT_SIZE + options['Output Size'][0] * (self.OUTPUT_GAPS + 1)
+        self.BATCH_COUNT = options['Batch Count']
+        self.Parameters = (options['Factor'], )
 
     def ReadData(self, ignore_existing = False):
 
-        if hd.DataExist(self.Solution):
+        if self.Handler.DataExist():
             if ignore_existing == True:
                 if self.VERBOSE >= 1:
                     print("The data already have read. deleting data ...")
-                hd.ClearDataDirectory(self.Solution)
+                self.Handler.ClearDataDirectory()
             
             elif ignore_existing == False:
                 if self.VERBOSE >= 1:
@@ -44,8 +48,8 @@ class TradeReader:
         if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
 
-        hd.SqlQueryExecute(self.Solution, self.CountingName, (self.BUFFER_SIZE, ), self.__fetch_count)
-        hd.SqlQueryExecute(self.Solution, self.QueryName, (self.BUFFER_SIZE, * self.Parameters ), self.__data_handler)
+        self.Handler.SqlQueryExecute(self.CountingName, (self.BUFFER_SIZE, ), self.__fetch_count)
+        self.Handler.SqlQueryExecute(self.QueryName, (self.BUFFER_SIZE, * self.Parameters ), self.__data_handler)
         
         self.__wait_all_tasks_finished()
         print()
@@ -77,7 +81,7 @@ class TradeReader:
             buffer.append(record)
             if self.VERBOSE >= 2:
                 percent = 100.0 * row[0] / self.TotalCount
-                message = "\rReading data: {0:.2f}%".format(percent)
+                message = "\rReading data: {0:.2f}% ".format(percent)
                 if self.__file_state is not None: message += self.__file_state
                 print(message, end='')
 
@@ -90,7 +94,7 @@ class TradeReader:
 
         self.__save_and_reset()
         self.__sizes.pop()
-        hd.SaveFile(self.Solution, "info", self.__sizes)
+        self.Handler.SaveFile("info", self.__sizes)
 
         if self.VERBOSE >= 1:
             self.__finished_state = "\rReading finished in {0:.2f} sec and {1} files".format(
@@ -142,7 +146,7 @@ class TradeReader:
             self.Shapes = dict()
 
         for file in files:
-            file["shape"] = hd.SaveFile(self.Solution, file["name"], file["data"])
+            file["shape"] = self.Handler.SaveFile(file["name"], file["data"])
             if loading_shapes: self.Shapes[file["key"]] = file["shape"]
         
         if self.VERBOSE >= 3:
