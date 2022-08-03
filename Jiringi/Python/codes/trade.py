@@ -10,6 +10,7 @@ class TradeReader:
     Solution = None
     QueryName = 'query'
     CountingName = '../queries/tools/trade-counting'
+    Parameters = ()
 
     __sizes = list()
     __x_training = list()
@@ -44,14 +45,16 @@ class TradeReader:
             print("Reading data: ...", end='')
 
         hd.SqlQueryExecute(self.Solution, self.CountingName, (self.BUFFER_SIZE, ), self.__fetch_count)
-        hd.SqlQueryExecute(self.Solution, self.QueryName, (self.BUFFER_SIZE, ), self.__data_handler)
+        hd.SqlQueryExecute(self.Solution, self.QueryName, (self.BUFFER_SIZE, * self.Parameters ), self.__data_handler)
         
         self.__wait_all_tasks_finished()
         print()
 
     def __fetch_count(self, cursor):
+        total_batch_size = 0
         for row in cursor:
-            self.TotalCount += row[1] - self.BUFFER_SIZE + 1
+            total_batch_size += row[1] - self.BUFFER_SIZE + 1
+            self.TotalCount += row[1]
         self.BATCH_SIZE = int(math.ceil(self.TotalCount / self.BATCH_COUNT))
     
     def __data_handler(self, cursor):
