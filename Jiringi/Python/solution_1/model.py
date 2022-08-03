@@ -12,7 +12,7 @@ class Modelling(ModelHandlers):
         DROPOUPT_VALUE_CNN = 0.1
         DROPOUPT_VALUE_FC = 0.7
 
-        model = keras.models.Sequential(name=Modelling.NAME)
+        model = keras.models.Sequential(name="Jiringi_" + Modelling.NAME)
         model.add(keras.Input(shape=input_shape))
 
         features = input_shape[2] * 20
