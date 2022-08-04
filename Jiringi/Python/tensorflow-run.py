@@ -24,9 +24,6 @@ model = Modelling.GetModel(x_training.shape[1:], y_training.shape[-1])
 check_point_name = Handlers.GetStringTime()
 check_point_path = "{}/model/{}.hdf5".format(Modelling.NAME, check_point_name)
 
-if hd.ModelExist(check_point_name):
-    model.load_weights(check_point_path)
-
 # Evaluation
 print("\n# Evaluation\n")
 score = model.evaluate(x_testing, y_testing, verbose=1)
@@ -43,9 +40,21 @@ print("\n# Training\n")
 checkpointer = ModelCheckpoint(filepath=check_point_path, verbose=1, save_best_only=True)
 checkpointer.load_weights_on_restart = True
 
-hist = model.fit(x_training, y_training, batch_size=1024, epochs=100,
+hist = model.fit(x_training, y_training, batch_size=1024, epochs=500,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)
+
+model.load_weights(check_point_path)
+
+model.save(
+    filepath=check_point_path,
+    overwrite=True,
+    include_optimizer=True,
+    save_format=None,
+    signatures=None,
+    options=None,
+    save_traces=True,
+)
 
 # Evaluation
 print("\n# Evaluation\n")
