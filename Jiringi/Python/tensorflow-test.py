@@ -1,6 +1,6 @@
 from keras.models import load_model
 from codes.handlers import Handlers
-from solution_1_simple_10.model import Modelling
+from solution_1.model import Modelling
 
 print()
 print("[{}]".format(Modelling.NAME.replace('_', '-').capitalize()))
@@ -21,10 +21,10 @@ for check_point_path in models:
     # Evaluation
     print("\n# Evaluation")
     score = model.evaluate(x_testing, y_testing, verbose=0)
-    model.PrintResult(score)
+    hd.PrintResult(score)
 
     # Prediction
     print("\n# Prediction")
     predicted = model.predict(x_testing, verbose=0)
-    average = model.Prediction(predicted, y_testing)
-    model.PrintResult(average)
+    average = Modelling.Prediction(predicted, y_testing)
+    hd.PrintResult(average)

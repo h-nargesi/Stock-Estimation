@@ -5,9 +5,6 @@ class Modelling(ModelHandlers):
 
     NAME = "solution_1"
 
-    def __init__(self, factor) -> None:
-        super().__init__(factor)
-
     def GetModel(input_shape, output_size):
         print("Model: {} -> {}".format(input_shape, output_size))
         DROPOUPT_VALUE_FC = 0.5

@@ -12,9 +12,28 @@ class Handlers:
 
     SOLUTION = None
     OPTIONS = None
+    SHOW_FACTOR = None
 
     def __init__(self, solution):
         self.SOLUTION = solution
+
+    def PrintResult(self, score, suffix='Result:', otype='.3f', prefix='%'):
+        if type(score) != list and type(score) != tuple:
+            score = [score]
+        
+        if prefix is None: prefix = ""
+        else: prefix = " " + prefix
+
+        text = ""
+        for index in range(0, len(score)):
+            text += ", {{{}:{}}}{}".format(index, otype, prefix)
+            index += 1
+
+        if self.SHOW_FACTOR is not None and self.SHOW_FACTOR != 1:
+            score = (np.array(score) * self.SHOW_FACTOR).tolist()
+        
+        if len(text) > 0:
+            print(suffix, text[2:].format(*score))
 
     def SaveFile(self, name, data):
         os.makedirs('{}/data/'.format(self.SOLUTION), exist_ok=True)
@@ -42,7 +61,7 @@ class Handlers:
 
     def ModelExist(self, name):
         os.makedirs('{}/model/'.format(self.SOLUTION), exist_ok=True)
-        return os.path.isfile("{}/model/{}.hdf5".format(self.SOLUTION, name))
+        return os.path.isfile("{}/model/{}.h5".format(self.SOLUTION, name))
 
     def DataExist(self):
         return os.path.isdir('{}/data/'.format(self.SOLUTION))
@@ -128,6 +147,7 @@ class Handlers:
         if self.OPTIONS is None:
             self.OPTIONS = Handlers.LoadSetting(self.SOLUTION, file)
             print("Options: ", self.OPTIONS)
+            self.SHOW_FACTOR = self.OPTIONS['Factor']
         return self.OPTIONS
 
     def LoadGuery(path, parameters):
