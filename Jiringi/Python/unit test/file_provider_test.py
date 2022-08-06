@@ -1,4 +1,8 @@
 import time
+import sys
+import os
+sys.path.insert(1, os.path.abspath(os.getcwd()))
+
 from codes.handlers import Handlers
 from codes.file_provider import FileProvider
 
