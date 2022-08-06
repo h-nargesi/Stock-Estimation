@@ -40,7 +40,7 @@ print("\n# Training\n")
 checkpointer = ModelCheckpoint(filepath=check_point_path, verbose=1, save_best_only=True)
 checkpointer.load_weights_on_restart = True
 
-hist = model.fit(x_training, y_training, batch_size=1024, epochs=100,
+hist = model.fit(x_training, y_training, batch_size=1024, epochs=50,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)
 
