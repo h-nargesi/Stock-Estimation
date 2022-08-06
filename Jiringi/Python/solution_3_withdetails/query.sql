@@ -27,10 +27,6 @@ from (
 		, (LowPrice - LowPricePrv) / LowPrice as LowIncreasing
 		, (HighPrice - HighPricePrv) / HighPrice as HighIncreasing
 		, (OpenPrice - OpenPricePrv) / OpenPrice as OpenIncreasing
-		, (DollarClosePrice - DollarClosePricePrv) / DollarClosePrice as DollarCloseIncreasing
-		, (DollarLowPrice - DollarLowPricePrv) / DollarLowPrice as DollarLowIncreasing
-		, (DollarHighPrice - DollarHighPricePrv) / DollarHighPrice as DollarHighIncreasing
-		, (DollarOpenPrice - DollarOpenPricePrv) / DollarOpenPrice as DollarOpenIncreasing
 	from (
 		select Trade.InstrumentID, RowCounts, DateTimeEn
 			, ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as TradeNo
