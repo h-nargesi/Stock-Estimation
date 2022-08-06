@@ -22,20 +22,29 @@ select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, @Factor * CAST(LowIncreasing AS FLOAT) as LowIncreasing
 	, @Factor * CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
 	, DATEDIFF(DAY, '1921-03-21', DateTimeEn) as DurationDays
-	, d.Code2 as IndustryCode
+	, @Factor * CAST(CloseIncreasing AS FLOAT) as DollarCloseIncreasing
+	, @Factor * CAST(HighIncreasing AS FLOAT) as DollarHighIncreasing
+	, @Factor * CAST(LowIncreasing AS FLOAT) as DollarLowIncreasing
+	, @Factor * CAST(OpenIncreasing AS FLOAT) as DollarOpenIncreasing
+	, DATEDIFF(DAY, '1921-03-21', DateTimeEn) as DollarDurationDays
+	--, d.Code2 as IndustryCode
 from (
 	select InstrumentID, RowCounts, DateTimeEn, TradeNo
 		, (ClosePrice - ClosePricePrv) / ClosePrice as CloseIncreasing
 		, (LowPrice - LowPricePrv) / LowPrice as LowIncreasing
 		, (HighPrice - HighPricePrv) / HighPrice as HighIncreasing
 		, (OpenPrice - OpenPricePrv) / OpenPrice as OpenIncreasing
+		, (DollarClosePrice - DollarClosePricePrv) / DollarClosePrice as DollarCloseIncreasing
+		, (DollarLowPrice - DollarLowPricePrv) / DollarLowPrice as DollarLowIncreasing
+		, (DollarHighPrice - DollarHighPricePrv) / DollarHighPrice as DollarHighIncreasing
+		, (DollarOpenPrice - DollarOpenPricePrv) / DollarOpenPrice as DollarOpenIncreasing
 	from (
 		select Trade.InstrumentID, RowCounts, DateTimeEn
 			, ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as TradeNo
-			, ClosePrice / DollarClosePrice as ClosePrice
-			, LowPrice / DollarLowPrice as LowPrice
-			, HighPrice / DollarHighPrice as HighPrice
-			, OpenPrice / DollarOpenPrice as OpenPrice
+			, ClosePrice as ClosePrice
+			, LowPrice as LowPrice
+			, HighPrice as HighPrice
+			, OpenPrice as OpenPrice
 			, LAG(ClosePrice) OVER(partition by Trade.InstrumentID order by DateTimeEn) as ClosePricePrv
 			, LAG(LowPrice) OVER(partition by Trade.InstrumentID order by DateTimeEn) as LowPricePrv
 			, LAG(HighPrice) OVER(partition by Trade.InstrumentID order by DateTimeEn) as HighPricePrv
@@ -43,26 +52,29 @@ from (
 		from UniqueTrade Trade
 		join ActiveInstuments(@MinSize) ValidInstruments
 		on ValidInstruments.InstrumentID = Trade.InstrumentID
-		left join (
-			select DateTimeEn as StartDateTimeEn
-				, DATEADD(DAY, -1, LEAD(DateTimeEn) OVER(order by DateTimeEn)) as EndDateTimeEn
-				, ClosePrice as DollarClosePrice
-				, LowPrice as DollarLowPrice
-				, HighPrice as DollarHighPrice
-				, OpenPrice as DollarOpenPrice
-				, LAG(ClosePrice) OVER (order by DateTimeEn) as DollarClosePricePrv
-			from UniqueTrade
-			where InstrumentID = 17321
-		) Dollar
-		on Trade.DateTimeEn between Dollar.StartDateTimeEn and ISNULL(Dollar.EndDateTimeEn, Trade.DateTimeEn)
-	) td
+	) t
+	left join (
+		select DateTimeEn as StartDateTimeEn
+			, DATEADD(DAY, -1, LEAD(DateTimeEn) OVER(order by DateTimeEn)) as EndDateTimeEn
+			, ClosePrice as DollarClosePrice
+			, LowPrice as DollarLowPrice
+			, HighPrice as DollarHighPrice
+			, OpenPrice as DollarOpenPrice
+			, LAG(ClosePrice) OVER (order by DateTimeEn) as DollarClosePricePrv
+			, LAG(LowPrice) OVER (order by DateTimeEn) as DollarLowPricePrv
+			, LAG(HighPrice) OVER (order by DateTimeEn) as DollarHighPricePrv
+			, LAG(OpenPrice) OVER (order by DateTimeEn) as DollarOpenPricePrv
+		from UniqueTrade
+		where InstrumentID = 17321
+	) d
+	on t.DateTimeEn between d.StartDateTimeEn and ISNULL(d.EndDateTimeEn, t.DateTimeEn)
 ) t
-join Instrument i on i.ID = t.InstrumentID
-join Company c on c.ID = i.CompanyID
-join (
-	select Code
-		, ROW_NUMBER() OVER (order by Code) as Code2
-	from Industry
-) d on d.Code = c.IndustryCode
+--join Instrument i on i.ID = t.InstrumentID
+--join Company c on c.ID = i.CompanyID
+--join (
+--	select Code
+--		, ROW_NUMBER() OVER (order by Code) as Code2
+--	from Industry
+--) d on d.Code = c.IndustryCode
 where TradeNo > 1
 order by InstrumentID, DateTimeEn

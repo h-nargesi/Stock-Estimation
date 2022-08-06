@@ -16,7 +16,7 @@ class Modelling(ModelHandlers):
         options = self.Handler.LoadOptions()
         input_size = options["Input Size"]
         output_size = options["Output Size"]
-        input_shape = (input_size, 1, input_depth)
+        input_shape = (*input_size, input_depth)
         print("Model: {} -> {}".format(input_shape, output_size[0]))
 
         leayer_count = 1
