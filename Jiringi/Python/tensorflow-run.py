@@ -18,28 +18,28 @@ x_training, y_training, x_testing, y_testing = hd.LoadData(1)
 
 # Modeling
 print("\n# Modeling\n")
-modeling = Modelling()
-model = Modelling.GetModel(x_training.shape[1:], y_training.shape[-1])
+modeling = Modelling(hd)
+model = modeling.GetModel(x_training.shape[1:], y_training.shape[-1])
 
 check_point_path = "{}/model/{}.h5".format(Modelling.NAME, Modelling.TITLE)
 
 # Evaluation
 print("\n# Evaluation\n")
 score = model.evaluate(x_testing, y_testing, verbose=1)
-modeling.PrintResult(score)
+hd.PrintResult(score)
 
 # Prediction
 print("\n# Prediction\n")
 predicted = model.predict(x_testing)
-prediction_result = modeling.Prediction(predicted, y_testing)
-modeling.PrintResult(prediction_result)
+prediction_result = Modelling.Prediction(predicted, y_testing)
+hd.PrintResult(prediction_result)
 
 # Training
 print("\n# Training\n")
 checkpointer = ModelCheckpoint(filepath=check_point_path, verbose=1, save_best_only=True)
 checkpointer.load_weights_on_restart = True
 
-hist = model.fit(x_training, y_training, batch_size=1024, epochs=100,
+hist = model.fit(x_training, y_training, batch_size=1024, epochs=150,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)
 
@@ -58,10 +58,10 @@ model.save(
 # Evaluation
 print("\n# Evaluation\n")
 score = model.evaluate(x_testing, y_testing, verbose=1)
-modeling.PrintResult(score)
+hd.PrintResult(score)
 
 # Prediction
 print("\n# Prediction\n")
 predicted = model.predict(x_testing)
-prediction_result = modeling.Prediction(predicted, y_testing)
-modeling.PrintResult(prediction_result)
+prediction_result = Modelling.Prediction(predicted, y_testing)
+hd.PrintResult(prediction_result)

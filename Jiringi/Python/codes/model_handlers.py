@@ -1,4 +1,7 @@
+import math
+from operator import mod
 import numpy as np
+import keras
 from codes.handlers import Handlers
 
 class ModelHandlers:
@@ -40,3 +43,63 @@ class ModelHandlers:
             print(investment_result)
         
         return { "sum": np.sum(investment_result), "average": np.average(investment_result) }
+
+    def PrintModel(model: keras.Sequential):
+        print('Model:', model.name, end='')
+        print("""
+=================================================================================
+ Layer                 | Type  | Output Shape          | Params | Activation Func
+---------------------------------------------------------------------------------""")
+
+        ModelHandlers.__print_layer(model.input)
+        for layer in model.layers:
+            ModelHandlers.__print_layer(layer)
+        ModelHandlers.__print_model(model)
+        print("""
+=================================================================================""")
+
+    def __print_model(model):
+        print("""---------------------------------------------------------------------------------""")
+        text = "loss: {}".format(model.loss)
+        print(text, end='')
+        ModelHandlers.__print_tabs(len(text), 2, 0)
+
+        text = "optimizer: {}".format(model.optimizer._name)
+        print(text, end='')
+        ModelHandlers.__print_tabs(len(text), 3, 2)
+
+        text = "metrics: {}".format(model.metrics)
+        print(text, end='')
+    
+    def __print_layer(layer):
+        print(layer.name, end='')
+        ModelHandlers.__print_tabs(len(layer.name), 3, 0)
+        
+        text = "{}".format(layer.__class__.__name__)
+        print(text, end='')
+        ModelHandlers.__print_tabs(len(text), 1, 3)
+
+        if type(layer) == keras.engine.keras_tensor.KerasTensor:
+            print(layer.type_spec.shape)
+        else:
+            print(layer.output_shape, end='')
+            text = "{}".format(layer.output_shape)
+            ModelHandlers.__print_tabs(len(text), 3, 4)
+
+            text = "{}".format(layer.count_params())
+            print(text, end='')
+            if hasattr(layer, "activation"):
+                ModelHandlers.__print_tabs(len(text), 1, 7)
+                print(' ', end='')
+                print(layer.activation.__name__, end='')
+            print()
+
+        print()
+
+    def __print_tabs(length, tabs, orgin):
+        if length >= tabs * 8:
+            print()
+            length = orgin + tabs
+        else:
+            length = tabs - int(length / 8.0)
+        print('\t' * length, end='')

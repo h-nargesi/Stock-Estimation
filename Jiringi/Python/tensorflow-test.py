@@ -17,7 +17,7 @@ models = hd.ModelList()
 for check_point_path in models:
     print('\n[{}]'.format(check_point_path))
     model = load_model("{}/model/{}".format(Modelling.NAME, check_point_path))
-    model.summary()
+    Modelling.PrintModel(model)
 
     # Evaluation
     print("\n# Evaluation")
