@@ -61,7 +61,8 @@ class ModelHandlers:
 
     def __print_model(model, parameters):
         print("""---------------------------------------------------------------------------------""")
-        text = "loss: {}".format(model.loss)
+        text = model.loss if type(model.loss) == str else model.loss.__name__
+        text = "loss: {}".format(text)
         print(text, end='')
         ModelHandlers.__print_tabs(len(text), 2, 0)
 
@@ -69,7 +70,8 @@ class ModelHandlers:
         print(text, end='')
         ModelHandlers.__print_tabs(len(text), 3, 2)
 
-        text = "metrics: {}".format(model.metrics)
+        text = [m if type(m) == str else m.__class__.__name__ for m in model.metrics]
+        text = "metrics: {}".format(text)
         print(text)
         print('parameters:', parameters)
     

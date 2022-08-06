@@ -6,6 +6,7 @@ from solution_1.model import Modelling
 print()
 print("[{}]".format(Modelling.NAME.replace('_', '-').capitalize()))
 hd = Handlers(Modelling.NAME)
+hd.LoadOptions()
 
 # Data
 print("\n# Data\n")
