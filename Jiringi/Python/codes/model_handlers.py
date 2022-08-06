@@ -52,13 +52,14 @@ class ModelHandlers:
 ---------------------------------------------------------------------------------""")
 
         ModelHandlers.__print_layer(model.input)
+        parameters = 0
         for layer in model.layers:
-            ModelHandlers.__print_layer(layer)
-        ModelHandlers.__print_model(model)
+            parameters += ModelHandlers.__print_layer(layer)
+        ModelHandlers.__print_model(model, parameters)
         print("""
 =================================================================================""")
 
-    def __print_model(model):
+    def __print_model(model, parameters):
         print("""---------------------------------------------------------------------------------""")
         text = "loss: {}".format(model.loss)
         print(text, end='')
@@ -69,9 +70,11 @@ class ModelHandlers:
         ModelHandlers.__print_tabs(len(text), 3, 2)
 
         text = "metrics: {}".format(model.metrics)
-        print(text, end='')
+        print(text)
+        print('parameters:', parameters)
     
     def __print_layer(layer):
+        parameters = 0
         print(layer.name, end='')
         ModelHandlers.__print_tabs(len(layer.name), 3, 0)
         
@@ -86,7 +89,8 @@ class ModelHandlers:
             text = "{}".format(layer.output_shape)
             ModelHandlers.__print_tabs(len(text), 3, 4)
 
-            text = "{}".format(layer.count_params())
+            parameters = layer.count_params()
+            text = "{}".format(parameters)
             print(text, end='')
             if hasattr(layer, "activation"):
                 ModelHandlers.__print_tabs(len(text), 1, 7)
@@ -95,6 +99,7 @@ class ModelHandlers:
             print()
 
         print()
+        return parameters
 
     def __print_tabs(length, tabs, orgin):
         if length >= tabs * 8:
