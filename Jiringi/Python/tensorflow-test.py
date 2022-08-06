@@ -17,6 +17,7 @@ models = hd.ModelList()
 for check_point_path in models:
     print('\n[{}]'.format(check_point_path))
     model = load_model("{}/model/{}".format(Modelling.NAME, check_point_path))
+    model.summary()
 
     # Evaluation
     print("\n# Evaluation")
@@ -26,5 +27,5 @@ for check_point_path in models:
     # Prediction
     print("\n# Prediction")
     predicted = model.predict(x_testing, verbose=0)
-    average = Modelling.Prediction(predicted, y_testing)
-    hd.PrintResult(average)
+    prediction_result = Modelling.Prediction(predicted, y_testing)
+    hd.PrintResult(prediction_result)

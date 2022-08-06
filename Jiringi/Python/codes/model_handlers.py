@@ -1,7 +1,13 @@
 import numpy as np
+from codes.handlers import Handlers
 
 class ModelHandlers:
 
+    Handler: Handlers = None
+
+    def __init__(self, handler: Handlers):
+        self.Handler = handler
+    
     def Prediction(predicted, y_testing, verbose=0):
 
         OUTPUT_DATA_SIZE, OUTPUT_INV_LENGTH = predicted.shape
@@ -30,7 +36,7 @@ class ModelHandlers:
             print(check_multies)
             print("investment_mask")
             print(investment_mask)
-            print("investment_result: {0:.2f}".format(np.sum(investment_result)))
+            print("investment_result: sum={0:.2f}, avg={1:.2f}".format(np.sum(investment_result), np.average(investment_result)))
             print(investment_result)
         
-        return np.sum(investment_result)
+        return { "sum": np.sum(investment_result), "average": np.average(investment_result) }
