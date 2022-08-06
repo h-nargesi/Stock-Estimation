@@ -27,6 +27,8 @@ class TradeReader:
         options = handler.LoadOptions()
 
         self.INPUT_SIZE = options['Input Size']
+        self.INPUT_LINE_SIZE = self.INPUT_SIZE[1]
+        self.INPUT_SIZE = self.INPUT_SIZE[0]
         self.OUTPUT_GAPS = options['Output Size'][1]
         self.BUFFER_SIZE = self.INPUT_SIZE + options['Output Size'][0] * (self.OUTPUT_GAPS + 1)
         self.BATCH_COUNT = options['Batch Count']
@@ -77,7 +79,12 @@ class TradeReader:
                     self.__save_and_reset()
 
             record = list()
-            record.append(row[4:])
+            s = 4
+            depth = int((len(row) - 4) / self.INPUT_LINE_SIZE)
+            for _ in range(0, self.INPUT_LINE_SIZE):
+                e = s + depth
+                record.append(row[s:e])
+                s = e
 
             buffer.append(record)
             if self.VERBOSE >= 2:
