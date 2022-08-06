@@ -4,7 +4,7 @@ from codes.handlers import Handlers
 
 class Modelling(ModelHandlers):
 
-    NAME = "solution_3_withrealvalue"
+    NAME = "solution_3_withdetails"
     TITLE = "mae_downside_3cnn"
 
     def __init__(self, handler: Handlers) -> None:
