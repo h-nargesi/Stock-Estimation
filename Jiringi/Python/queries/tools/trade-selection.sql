@@ -22,10 +22,10 @@ select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, @Factor * CAST(LowIncreasing AS FLOAT) as LowIncreasing
 	, @Factor * CAST(OpenIncreasing AS FLOAT) as OpenIncreasing
 	, DATEDIFF(DAY, '1921-03-21', DateTimeEn) as DurationDays
-	, @Factor * CAST(CloseIncreasing AS FLOAT) as DollarCloseIncreasing
-	, @Factor * CAST(HighIncreasing AS FLOAT) as DollarHighIncreasing
-	, @Factor * CAST(LowIncreasing AS FLOAT) as DollarLowIncreasing
-	, @Factor * CAST(OpenIncreasing AS FLOAT) as DollarOpenIncreasing
+	, @Factor * CAST(DollarCloseIncreasing AS FLOAT) as DollarCloseIncreasing
+	, @Factor * CAST(DollarHighIncreasing AS FLOAT) as DollarHighIncreasing
+	, @Factor * CAST(DollarLowIncreasing AS FLOAT) as DollarLowIncreasing
+	, @Factor * CAST(DollarOpenIncreasing AS FLOAT) as DollarOpenIncreasing
 	, DATEDIFF(DAY, '1921-03-21', DateTimeEn) as DollarDurationDays
 	--, d.Code2 as IndustryCode
 from (

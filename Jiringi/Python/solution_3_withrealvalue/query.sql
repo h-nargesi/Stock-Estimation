@@ -16,7 +16,7 @@ select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, InstrumentID
 	, RowCounts - 1 as RowCounts
 	, @Factor * CAST(CloseIncreasing AS FLOAT) as CloseIncreasing
-	, @Factor * CAST(CloseIncreasing AS FLOAT) as DollarCloseIncreasing
+	, @Factor * CAST(DollarCloseIncreasing AS FLOAT) as DollarCloseIncreasing
 	--, d.Code2 as IndustryCode
 from (
 	select InstrumentID, RowCounts, DateTimeEn, TradeNo
