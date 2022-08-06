@@ -7,4 +7,4 @@ from solution_1.model import Modelling
 
 hd = Handlers(Modelling.NAME)
 modeling = Modelling(hd)
-model = modeling.GetModel(2)
+model = modeling.GetModel(1)
