@@ -5,7 +5,7 @@ from codes.handlers import Handlers
 class Modelling(ModelHandlers):
 
     NAME = "solution_1"
-    TITLE = "mse_downside_3cnn"
+    TITLE = "mse_downside_4cnn"
 
     def __init__(self, handler: Handlers) -> None:
         super().__init__(handler)
@@ -29,11 +29,15 @@ class Modelling(ModelHandlers):
         
         leayer_count += 1
         features += input_shape[2] * 10
-        model.add(keras.layers.Conv2D(features, (19, 1), strides=(2, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
+        model.add(keras.layers.Conv2D(features, (5, 1), strides=(2, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
         
         leayer_count += 1
         features += input_shape[2] * 5
-        model.add(keras.layers.Conv2D(features, (46, 1), strides=(4, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
+        model.add(keras.layers.Conv2D(features, (9, 1), strides=(3, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
+        
+        leayer_count += 1
+        features += input_shape[2] * 5
+        model.add(keras.layers.Conv2D(features, (13, 1), strides=(4, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
         
         model.add(keras.layers.Flatten())
 
