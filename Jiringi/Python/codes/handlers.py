@@ -18,15 +18,24 @@ class Handlers:
         self.SOLUTION = solution
 
     def PrintResult(self, score, suffix='Result:', otype='.3f', prefix='%'):
+        names = None
         if type(score) != list and type(score) != tuple:
-            score = [score]
+            if type(score) != dict: score = [score]
+            else:
+                temp = list()
+                names = list()
+                for k, v in score.items():
+                    names.append(k)
+                    temp.append(v)
+                score = temp
         
         if prefix is None: prefix = ""
         else: prefix = " " + prefix
 
         text = ""
         for index in range(0, len(score)):
-            text += ", {{{}:{}}}{}".format(index, otype, prefix)
+            name = names[index] + "=" if names is not None else ""
+            text += ", {0}{{{1}:{2}}}{3}".format(name, index, otype, prefix)
             index += 1
 
         if self.SHOW_FACTOR is not None and self.SHOW_FACTOR != 1:
