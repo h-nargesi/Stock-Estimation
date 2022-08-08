@@ -5,7 +5,7 @@ from codes.handlers import Handlers
 class Modelling(ModelHandlers):
 
     NAME = "solution_3_withdetails"
-    TITLE = "mae_downside_3cnn"
+    TITLE = "mae_downside_3cnn_lessdepth"
 
     def __init__(self, handler: Handlers) -> None:
         super().__init__(handler)
@@ -24,15 +24,15 @@ class Modelling(ModelHandlers):
         model.add(keras.Input(shape=input_shape, name='{}/input/{}/factor:{}'.format(leayer_count, input_size, options["Factor"])))
         
         leayer_count += 1
-        features = input_shape[2] * 15
+        features = input_shape[2] * 10
         model.add(keras.layers.Conv2D(features, (5, 1), strides=(1, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
         
         leayer_count += 1
-        features += input_shape[2] * 10
+        features += input_shape[2] * 5
         model.add(keras.layers.Conv2D(features, (19, 1), strides=(2, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
         
         leayer_count += 1
-        features += input_shape[2] * 5
+        features += input_shape[2] * 1
         model.add(keras.layers.Conv2D(features, (46, 1), strides=(4, 1), kernel_initializer='normal', activation='relu', name='{}/normal_kinit'.format(leayer_count)))
         
         model.add(keras.layers.Flatten())
