@@ -1,16 +1,13 @@
-select *
+select COUNT(1)
 from (
-	select ClosePrice - LAG(ClosePrice) OVER(partition by InstrumentID order by DateTimeEn) as CalcClosePriceChange
+	select ClosePrice - LAG(ClosePrice) OVER(partition by t.InstrumentID order by DateTimeEn) as CalcClosePriceChange
 		, ClosePriceChange
-		, LAG(ClosePrice) OVER(partition by InstrumentID order by DateTimeEn) as PrvClosePrice
+		, LAG(ClosePrice) OVER(partition by t.InstrumentID order by DateTimeEn) as PrvClosePrice
 		, ClosePrice
 		, LowPrice
 		, HighPrice
-	from Trade
-	where InstrumentID in (
-		select InstrumentID from Instrument where TypeID in (1)
-	)
+	from Trade t
+	join ActiveInstuments(1) v
+	on v.InstrumentID = t.InstrumentID
 ) t
-where CalcClosePriceChange is null and ClosePriceChange is not null
-	or CalcClosePriceChange is not null and ClosePriceChange is null
-	or CalcClosePriceChange != ClosePriceChange
+where ClosePriceChange is null or CalcClosePriceChange != ClosePriceChange
