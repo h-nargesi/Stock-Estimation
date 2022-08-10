@@ -9,6 +9,7 @@ WITH RankTrade as (
         , t.RealClosePrice, t.RealClosePriceChange, t.BuyerCount, t.TradeCount, t.ShareCount, t.Volume
         , CAST(t.ID as varchar(MAX)) as ID_STR
     from Trade t
+    join ActiveInstuments(1) v on v.InstrumentID = t.InstrumentID
 
 ), DupTrade as (
     select CASE WHEN t.DateTimeEn = er.DateTimeEn THEN 'C'
@@ -33,7 +34,7 @@ WITH RankTrade as (
     ) er on er.InstrumentID = t.InstrumentID and (t.RowNumber between er.MinRowNumber - 3 and er.MaxRowNumber + 3
         or CHARINDEX(t.ID_STR, PreviousIDs) > 0
         )
-    where er.InstrumentID = 20038 --and er.DateTimeEn = '2011-10-17'
+    --where er.InstrumentID = 20038 --and er.DateTimeEn = '2011-10-17'
 )
 
 select *

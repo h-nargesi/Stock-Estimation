@@ -8,6 +8,7 @@ WITH DupTrade as (
         select InstrumentID, DateTimeEn, COUNT(*) as RC
             , CAST(InstrumentID as varchar(MAX)) + '|' + CAST(CAST(DateTimeEn as date) as varchar(MAX)) as Name
         from Trade
+		join ActiveInstuments(@MinSize) v on v.InstrumentID = Trade.InstrumentID
         group by InstrumentID, DateTimeEn
         having count(*) > 1
     ) er on er.InstrumentID = t.InstrumentID and er.DateTimeEn = t.DateTimeEn
