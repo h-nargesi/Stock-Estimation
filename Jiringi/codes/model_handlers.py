@@ -1,5 +1,3 @@
-import math
-from operator import mod
 import numpy as np
 import keras
 from codes.handlers import Handlers

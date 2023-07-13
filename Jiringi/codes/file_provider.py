@@ -1,5 +1,5 @@
 import math
-from tensorflow.keras.utils import Sequence
+from tensorflow.python.keras.utils import Sequence
 from codes.handlers import Handlers
 
 class FileProvider(Sequence):

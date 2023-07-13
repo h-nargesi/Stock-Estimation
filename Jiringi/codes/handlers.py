@@ -1,4 +1,3 @@
-from logging import Handler
 import pymssql as sql
 import numpy as np
 import pandas as pd
