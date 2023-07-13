@@ -1,4 +1,5 @@
-import pymssql as sql
+import pymssql
+import sqlalchemy
 import numpy as np
 import pandas as pd
 import datetime
@@ -148,8 +149,8 @@ class Handlers:
         path = "{}/{}.sql".format(self.SOLUTION, file)
         query, parameters = Handlers.LoadGuery(path, parameters)
 
-        with Handlers.GetConnection() as connection:
-            return pd.read_sql(query, connection, params=parameters)
+        with Handlers.GetConnectionAlchemy() as connection:
+            return pd.read_sql_query(query, connection, params=parameters)
 
     def LoadOptions(self, file='options.json'):
         if self.OPTIONS is None:
@@ -174,11 +175,19 @@ class Handlers:
         
         return (query, params)
 
+    def GetConnectionAlchemy():
+
+        info = Handlers.LoadSetting("queries", "setting.json")
+
+        con_string = "mssql+pymssql://{user}:{password}@{server}/{database}".format(**info)
+
+        return sqlalchemy.create_engine(con_string).begin()
+
     def GetConnection():
 
         info = Handlers.LoadSetting("queries", "setting.json")
 
-        return sql.connect(
+        return pymssql.connect(
             server = info['server'],
             user = info['user'], 
             password = info['password'], 

@@ -1,1 +1,1 @@
-pip install matplotlib tensorflow pymssql pandas jupyterlab
+pip install matplotlib tensorflow pymssql sqlalchemy pandas jupyterlab
