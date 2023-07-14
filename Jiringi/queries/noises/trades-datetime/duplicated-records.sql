@@ -5,11 +5,11 @@ WITH DupTrade as (
         , Name as Grouping
     from Trade t
     join (
-        select InstrumentID, DateTimeEn, COUNT(*) as RC
-            , CAST(InstrumentID as varchar(MAX)) + '|' + CAST(CAST(DateTimeEn as date) as varchar(MAX)) as Name
-        from Trade
-		join ActiveInstuments(@MinSize) v on v.InstrumentID = Trade.InstrumentID
-        group by InstrumentID, DateTimeEn
+        select t.InstrumentID, DateTimeEn, COUNT(*) as RC
+            , CAST(t.InstrumentID as varchar(MAX)) + '|' + CAST(CAST(DateTimeEn as date) as varchar(MAX)) as Name
+        from Trade t
+		join ActiveInstuments(320) v on v.InstrumentID = t.InstrumentID
+        group by t.InstrumentID, DateTimeEn
         having count(*) > 1
     ) er on er.InstrumentID = t.InstrumentID and er.DateTimeEn = t.DateTimeEn
     where er.InstrumentID = 20038 --and er.DateTimeEn = '2011-10-17'

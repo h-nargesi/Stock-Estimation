@@ -1,4 +1,4 @@
-select COUNT(1)
+select * --COUNT(1)
 from (
 	select ClosePrice - LAG(ClosePrice) OVER(partition by t.InstrumentID order by DateTimeEn) as CalcClosePriceChange
 		, ClosePriceChange
