@@ -12,7 +12,7 @@ return
         from (
             select i.ID as InstrumentID, RowCounts
                 , ISNULL(DATEDIFF(DAY, StartDateTime, EndDateTime), 0) as Duration
-            from Instrument i join Company c on i.CompanyID = c.ID
+            from Instrument i left join Company c on i.CompanyID = c.ID
             join (
                 select InstrumentID
                     , MIN(DateTimeEn) as StartDateTime
@@ -22,7 +22,8 @@ return
                 group by InstrumentID
                 having COUNT(1) >= @MinSize
             ) t on t.InstrumentID = i.ID
-            where i.TypeID = 1 and c.TypeID = 1 and c.StateID = 1
+            where i.TypeID in (1 /*Share*/, 19 /*Currency*/)
+			  and (c.ID is null or c.TypeID = 1 and c.StateID = 1)
         ) dur
     ) dens
     order by Score desc
