@@ -1,23 +1,29 @@
 declare @InstrumentIDs varchar(max) = '13',
 		@Zoom int = 5,
-        @Offset int = 0,
-        @Count int = 1000;
+        @Start datetime = null,
+        @End datetime = null;
 
 WITH BasicData as (
 	select InstrumentID, DateTimeEn, RowCounts, Duration
-		, CASE Duration WHEN 0 THEN 0 ELSE CAST(RowCounts AS FLOAT) / CAST(Duration AS FLOAT) END AS Density
-		, ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) as GroupingValue
+		, CAST(RowCounts AS FLOAT) / CAST(Duration AS FLOAT) as Density
 	from (
 		select InstrumentID
-			, COUNT(1) AS RowCounts
+			, COUNT(1) as RowCounts
 			, MIN(t.DateTimeEn) as DateTimeEn
-			, ISNULL(DATEDIFF(DAY, MIN(t.DateTimeEn), MAX(t.DateTimeEn)), 0) as Duration
+			, @Zoom as Duration
 		from (
 			select InstrumentID
 				, t.DateTimeEn
-				, ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) / @Zoom as GroupingValue
-			from Trade t
-			where t.InstrumentID in (select CAST(VALUE AS INT) AS VALUE from STRING_SPLIT(@InstrumentIDs, ','))
+				, ISNULL(DATEDIFF(DAY, t.DateTimeEn, t.GroupingBaseDate), 0) / @Zoom as GroupingValue
+			from (
+				select InstrumentID
+					, t.DateTimeEn
+					, MIN(t.DateTimeEn) OVER(PARTITION BY InstrumentID ORDER BY DateTimeEn) as GroupingBaseDate
+				from Trade t
+				where t.InstrumentID in (select CAST(VALUE AS INT) AS VALUE from STRING_SPLIT(@InstrumentIDs, ','))
+				  and (@Start is null or t.DateTimeEn >= @Start)
+				  and (@End is null or t.DateTimeEn <= @End)
+			) t
 		) t
 		group by InstrumentID, GroupingValue
 	) dur
@@ -51,9 +57,6 @@ from (
 		, SUM(CASE WHEN d.RowCounts IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS RowCountsDomains
 		, SUM(CASE WHEN d.Duration IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS DurationDomains
 		, SUM(CASE WHEN d.Density IS NOT NULL THEN 1 ELSE 0 END) OVER (partition by i.InstrumentID order by i.DateTimeEn) AS DensityDomains
-		, ROW_NUMBER() OVER (partition by i.InstrumentID order by i.DateTimeEn) as Ranking
 	from InstrumentsFill i
 	left join BasicData d on i.InstrumentID = d.InstrumentID and i.DateTimeEn = d.DateTimeEn
 ) d
-where (@Offset is null or Ranking >= @Offset)
-  and (@Count is null or Ranking <= ISNULL(@Offset, 0) + @Count)
