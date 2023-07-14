@@ -1,7 +1,7 @@
 declare @InstrumentIDs varchar(max) = '17321',
 		@Zoom int = 10,
-        @Offset int = 0,
-        @Count int = null;
+        @Start datetime = null,
+        @End datetime = null;
 
 WITH BasicData as (
 	select InstrumentID
@@ -21,6 +21,8 @@ WITH BasicData as (
 			, ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) / @Zoom as GroupingValue
 		from Trade t
 		where t.InstrumentID in (select CAST(VALUE AS INT) AS ID from STRING_SPLIT(@InstrumentIDs, ','))
+		  and (@Start is null or t.DateTimeEn >= @Start)
+		  and (@End is null or t.DateTimeEn <= @End)
 	) t
 	group by InstrumentID, GroupingValue
 
@@ -69,5 +71,3 @@ from (
 	from InstrumentsFill i
 	left join BasicData d on i.InstrumentID = d.InstrumentID and i.DateTimeEn = d.DateTimeEn
 ) d
-where (@Offset is null or Ranking >= @Offset)
-  and (@Count is null or Ranking <= ISNULL(@Offset, 0) + @Count)
