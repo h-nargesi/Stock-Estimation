@@ -1,5 +1,13 @@
+if OBJECT_ID(N'ValidInstruments', N'U') is null begin
+	create table ValidInstruments
+	(
+		InstrumentID	int not null primary key
+	)
+end
+go
+
 drop function if exists ActiveInstuments
-GO
+go
 
 create function ActiveInstuments(@MinSize int)
 returns table as
@@ -19,6 +27,12 @@ return
                     , MAX(DateTimeEn) as EndDateTime
                     , COUNT(1) as RowCounts
                 from Trade
+				where InstrumentID not in (
+					select distinct t.InstrumentID
+					from Trade t
+					group by t.InstrumentID, DateTimeEn
+					having count(*) > 1
+				)
                 group by InstrumentID
                 having COUNT(1) >= @MinSize
             ) t on t.InstrumentID = i.ID
@@ -29,4 +43,10 @@ return
     order by Score desc
 GO
 
-select * from ActiveInstuments(320)
+merge into ValidInstruments dst
+using (select InstrumentID from ActiveInstuments(320)) src
+on (dst.InstrumentID = src.InstrumentID)
+when not matched by target then insert (InstrumentID, Type) values (src.InstrumentID, '')
+when not matched by source then delete;
+
+select * from ValidInstruments

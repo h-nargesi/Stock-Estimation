@@ -1,5 +1,4 @@
-declare @MinSize int = 310,
-        @Factor int = 100;
+declare @Factor int = 100;
 
 with UniqueTrade as (
 	select InstrumentID, DateTimeEn, ClosePriceChange
@@ -27,8 +26,7 @@ from (
 			, ClosePrice / DollarClosePrice as ClosePrice
 			, LAG(ClosePrice) OVER(partition by Trade.InstrumentID order by DateTimeEn) / DollarClosePricePrv as ClosePricePrv
 		from UniqueTrade Trade
-		join ActiveInstuments(@MinSize) ValidInstruments
-		on ValidInstruments.InstrumentID = Trade.InstrumentID
+		join ValidInstruments on ValidInstruments.InstrumentID = Trade.InstrumentID
 		left join (
 			select DateTimeEn as StartDateTimeEn
 				, DATEADD(DAY, -1, LEAD(DateTimeEn) OVER(order by DateTimeEn)) as EndDateTimeEn
