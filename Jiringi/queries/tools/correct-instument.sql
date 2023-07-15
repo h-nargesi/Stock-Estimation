@@ -46,7 +46,7 @@ GO
 merge into ValidInstruments dst
 using (select InstrumentID from ActiveInstuments(320)) src
 on (dst.InstrumentID = src.InstrumentID)
-when not matched by target then insert (InstrumentID, Type) values (src.InstrumentID, '')
+when not matched by target then insert (InstrumentID) values (src.InstrumentID)
 when not matched by source then delete;
 
 select * from ValidInstruments
