@@ -1,3 +1,5 @@
+import os
+import keras
 from keras.callbacks import ModelCheckpoint
 from codes.handlers import Handlers
 from codes.trade import TradeReader
@@ -19,10 +21,19 @@ x_training, y_training, x_testing, y_testing = hd.LoadData(1)
 
 # Modeling
 print("\n# Modeling\n")
-modeling = Modelling(hd)
-model = modeling.GetModel(x_training.shape[-1])
 
 check_point_path = "{}/model/{}.h5".format(Modelling.NAME, Modelling.TITLE)
+
+if os.path.isfile(check_point_path):
+    print("loading model\n")
+    model = keras.models.load_model(check_point_path)
+    # model.load_weights(check_point_path)
+else:
+    print("model creation\n")
+    modeling = Modelling(hd)
+    model = modeling.GetModel(x_training.shape[-1])
+
+Modelling.PrintModel(model)
 
 # Evaluation
 print("\n# Evaluation\n")
@@ -44,8 +55,8 @@ hist = model.fit(x_training, y_training, batch_size=1024, epochs=50,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)
 
-model.load_weights(check_point_path)
-
+# model.load_weights(check_point_path)
+check_point_path = "{}/model/{}.junk.h5".format(Modelling.NAME, Modelling.TITLE) 
 model.save(
     filepath=check_point_path,
     overwrite=True,
