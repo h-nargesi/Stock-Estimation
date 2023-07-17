@@ -4,8 +4,10 @@ select i.ID, i.Name, i.NameEn, i.ShortName
     , c.Name as Company
     , i.IndexID
     --, (select * from [RahavardNovin3].dbo.In ii where ii.ID = i.IndexID) as [Index]
-    , (select t.Title from InstrumentType t where t.ID = i.TypeID) as Type
+	, (select t.Title from CompanyType t where t.ID = c.TypeID) as CompanyType
+    , (select t.Title from InstrumentType t where t.ID = i.TypeID) as InstrumentType
     , (select m.Title from Market m where m.ID = i.MarketID) as Market
+	, (select s.Title from CompanyState s where s.ID = c.StateID) as CompanyState
     , (select b.Title from Board b where b.ID = i.BoardID) as Board
     , (select g.Title from InstrumentGroup g where g.ID = i.GroupID) as [Group]
     , (select v.Title from ValueType v where v.ID = i.ValueTypeID) as ValueType
