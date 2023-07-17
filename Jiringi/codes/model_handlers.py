@@ -43,19 +43,20 @@ class ModelHandlers:
         return { "sum": np.sum(investment_result), "average": np.average(investment_result) }
 
     def PrintModel(model: keras.Sequential):
-        print('Model:', model.name, end='')
-        print("""
-=================================================================================
- Layer                 | Type  | Output Shape          | Params | Activation Func
----------------------------------------------------------------------------------""")
+#         print('Model:', model.name, end='')
+#         print("""
+# =================================================================================
+#  Layer                 | Type  | Output Shape          | Params | Activation Func
+# ---------------------------------------------------------------------------------""")
 
-        ModelHandlers.__print_layer(model.input)
-        parameters = 0
-        for layer in model.layers:
-            parameters += ModelHandlers.__print_layer(layer)
-        ModelHandlers.__print_model(model, parameters)
-        print("""
-=================================================================================""")
+#         ModelHandlers.__print_layer(model.input)
+#         parameters = 0
+#         for layer in model.layers:
+#             parameters += ModelHandlers.__print_layer(layer)
+#         ModelHandlers.__print_model(model, parameters)
+#         print("""
+# =================================================================================""")
+        print(model.summary())
 
     def __print_model(model, parameters):
         print("""---------------------------------------------------------------------------------""")

@@ -2,5 +2,6 @@
     "Input Size": [120, 1],
     "Output Size": [1, 9],
     "Batch Count": 6,
+    "InstrumentsCount": 10,
     "Factor": 10
 }
