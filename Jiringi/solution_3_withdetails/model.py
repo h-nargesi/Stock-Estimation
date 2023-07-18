@@ -50,6 +50,4 @@ class Modelling(ModelHandlers):
 
         model.compile(loss='mae', optimizer='adam')
 
-        ModelHandlers.PrintModel(model)
-
         return model

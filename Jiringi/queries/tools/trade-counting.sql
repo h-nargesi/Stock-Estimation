@@ -1,3 +1,4 @@
-declare @Minsize int = 265
+declare @Minsize int = 265,
+        @Count int = 10;
 
-select * from ActiveInstuments(@Minsize)
+select * from ActiveInstuments(@Minsize, @Count)

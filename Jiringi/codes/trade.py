@@ -33,7 +33,8 @@ class TradeReader:
         self.BUFFER_SIZE = self.INPUT_SIZE + options['Output Size'][0] * (self.OUTPUT_GAPS + 1)
         self.BATCH_COUNT = options['Batch Count']
         self.FACTOR = options['Factor']
-        self.Parameters = (self.FACTOR, )
+        self.COUNT = options['InstrumentsCount']
+        self.Parameters = (self.BUFFER_SIZE, self.COUNT, self.FACTOR, )
 
     def ReadData(self, ignore_existing = False):
 
@@ -51,8 +52,8 @@ class TradeReader:
         if self.VERBOSE >= 1:
             print("Reading data: ...", end='')
 
-        self.Handler.SqlQueryExecute(self.CountingName, (self.BUFFER_SIZE, ), self.__fetch_count)
-        self.Handler.SqlQueryExecute(self.QueryName, (self.BUFFER_SIZE, * self.Parameters ), self.__data_handler)
+        self.Handler.SqlQueryExecute(self.CountingName, (self.BUFFER_SIZE, self.COUNT, ), self.__fetch_count)
+        self.Handler.SqlQueryExecute(self.QueryName, self.Parameters, self.__data_handler)
         
         self.__wait_all_tasks_finished()
         print()

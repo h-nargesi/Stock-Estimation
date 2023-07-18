@@ -20,7 +20,8 @@ WITH BasicData as (
 			, TradeCount, Volume
 			, ROW_NUMBER() over(partition by InstrumentID order by DateTimeEn) / @Zoom as GroupingValue
 		from Trade t
-		where t.InstrumentID in (select CAST(VALUE AS INT) AS ID from STRING_SPLIT(@InstrumentIDs, ','))
+		where (@InstrumentIDs is not null and t.InstrumentID in (select CAST(VALUE AS INT) AS VALUE from STRING_SPLIT(@InstrumentIDs, ','))
+			or @InstrumentIDs is null and t.InstrumentID in (select InstrumentID from ValidInstruments))
 		  and (@Start is null or t.DateTimeEn >= @Start)
 		  and (@End is null or t.DateTimeEn <= @End)
 	) t

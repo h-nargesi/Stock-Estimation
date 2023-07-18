@@ -1,5 +1,4 @@
-declare @MinSize int = 310,
-        @Factor int = 100
+declare @Factor int = 100
 
 select ROW_NUMBER() OVER (order by InstrumentID, DateTimeEn) as Ranking
 	, TradeNo - 1 as TradeNo
@@ -11,8 +10,7 @@ from (
         , ROW_NUMBER() OVER(partition by Trade.InstrumentID order by DateTimeEn) as TradeNo
         , ISNULL(ClosePriceChange / ClosePrice, 0) as CloseIncreasing
     from Trade
-	join ActiveInstuments(@MinSize) ValidInstruments
-	on ValidInstruments.InstrumentID = Trade.InstrumentID
+	join ValidInstruments on ValidInstruments.InstrumentID = Trade.InstrumentID
 ) t
 where t.TradeNo > 1
 order by InstrumentID, DateTimeEn
