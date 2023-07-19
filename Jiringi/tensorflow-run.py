@@ -55,7 +55,6 @@ hist = model.fit(x_training, y_training, batch_size=1024, epochs=50,
                  validation_split=0.2, callbacks=[checkpointer],
                  verbose=1, shuffle=True)
 
-# model.load_weights(check_point_path)
 check_point_path = "{}/model/{}.junk.h5".format(Modelling.NAME, Modelling.TITLE) 
 model.save(
     filepath=check_point_path,
@@ -66,6 +65,9 @@ model.save(
     options=None,
     save_traces=True,
 )
+
+# reload best model to evaluation and prediction
+model.load_weights(check_point_path)
 
 # Evaluation
 print("\n# Evaluation\n")
